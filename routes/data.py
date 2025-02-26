@@ -10,17 +10,17 @@ def get_customers():
     if not token:
         return jsonify({"error": "Не удалось получить токен Vitro-CAD MP"}), 500
 
-    parent_id = current_app.config['OBJECTS_LIST_PARENT_ID'] # ID родительского списка "Объекты Проектирования"
-    customer_folder_ct_id = current_app.config['CUSTOMER_FOLDER_CT_ID'] # content_type_id для папок Заказчиков
+    parent_id = current_app.config['OBJECT_LIST_ID'] # ID родительского списка "Объекты Проектирования"
+    customer_ct_id = current_app.config['CUSTOMER_CT_ID'] # content_type_id для папок Заказчиков
 
-    query_filter = f"item => item.ContentTypeId == Guid(\"{customer_folder_ct_id}\")" # Фильтр по content_type_id
+    query_filter = f"item => item.ContentTypeId == Guid(\"{customer_ct_id}\")" # Фильтр по content_type_id
 
-    customers_data = get_mp_children(token, parent_id, recursive=True, query=query_filter) # Используем get_mp_children с фильтром
+    customer_data = get_mp_children(token, parent_id, recursive=True, query=query_filter) # Используем get_mp_children с фильтром
 
-    if customers_data is None:
+    if customer_data is None:
         return jsonify({"error": "Не удалось получить список заказчиков из Vitro-CAD MP"}), 500
 
-    return jsonify(customers_data) # Возвращаем данные в JSON
+    return jsonify(customer_data) # Возвращаем данные в JSON
 
 # Получает список объектов проектирования для конкретного заказчика
 @bp.route('/objects/<customer_id>', methods=['GET'])
@@ -29,16 +29,16 @@ def get_objects_for_customer(customer_id):
     if not token:
         return jsonify({"error": "Не удалось получить токен Vitro-CAD MP"}), 500
 
-    object_folder_ct_id = current_app.config['OBJECT_FOLDER_CT_ID'] # content_type_id для папок Объектов Проектирования
+    object_ct_id = current_app.config['OBJECT_CT_ID'] # content_type_id для папок Объектов Проектирования
 
-    query_filter = f"item => item.ContentTypeId == Guid(\"{object_folder_ct_id}\")" # Фильтр по content_type_id
+    query_filter = f"item => item.ContentTypeId == Guid(\"{object_ct_id}\")" # Фильтр по content_type_id
 
-    objects_data = get_mp_children(token, customer_id, recursive=True, query=query_filter) # Используем get_mp_children с фильтром и customer_id
+    object_data = get_mp_children(token, customer_id, recursive=True, query=query_filter) # Используем get_mp_children с фильтром и customer_id
 
-    if objects_data is None:
+    if object_data is None:
         return jsonify({"error": "Не удалось получить список объектов проектирования из Vitro-CAD MP"}), 500
 
-    return jsonify(objects_data)
+    return jsonify(object_data)
 
 # Получает список марок комплектов из Vitro-CAD MP
 @bp.route('/marks', methods=['GET'])
@@ -47,11 +47,11 @@ def get_marks():
     if not token:
         return jsonify({"error": "Не удалось получить токен Vitro-CAD MP"}), 500
 
-    marks_list_parent_id = current_app.config['MARKS_LIST_PARENT_ID'] # parentId для списка "Марки комплектов"
+    mark_list_id = current_app.config['MARK_LIST_ID'] # parentId для списка "Марки комплектов"
 
-    marks_data = get_mp_children(token, marks_list_parent_id, recursive=False) # Используем get_mp_children для получения списка
+    mark_data = get_mp_children(token, mark_list_id, recursive=False) # Используем get_mp_children для получения списка
 
-    if marks_data is None:
+    if mark_data is None:
         return jsonify({"error": "Не удалось получить список марок комплектов из Vitro-CAD MP"}), 500
 
-    return jsonify(marks_data)
+    return jsonify(mark_data)

@@ -21,7 +21,7 @@
         <input type="text" id="projectName" name="projectName">
     </div>
 
-    <table id="selectionMatrix">
+    <table id="selectionMatrix" class="cell-border compact stripe hover"> 
         <thead>
         </thead>
         <tbody>
@@ -42,12 +42,6 @@
                     columns: columns, // Используем динамически созданные columns
                     data: data // Используем динамически созданные data
                 });
-                console.log('DataTables initialized:', dataTable); // <---- Добавьте эту строку
-                if ($.fn.DataTable.isDataTable('#selectionMatrix')) { // <---- Добавьте эту проверку
-                    console.log('DataTables isDataTable check: true');
-                } else {
-                    console.error('DataTables isDataTable check: false - initialization failed?'); // <---- И это
-                }
             }
 
             // Функция для загрузки данных и заполнения таблицы
@@ -59,24 +53,24 @@
                     var columns = [{ title: "Объект проектирования" }]; // Начинаем с первого столбца "Объект проектирования"
                     marksData.forEach(function (mark) {
                         columns.push({ title: mark.fieldValueMap.code }); // Используем mark.fieldValueMap.code для заголовков
-                    });
+                });
+                
+                // 2. Получаем объекты проектирования
+                $.getJSON("/data/objects/4dba8a9f-20c8-45eb-866b-966163d7ba02", function (customersData) { // Пока получаем объекты проектирования по конкретной константе
+                    objects = customersData.map(customer => ({ name: customer.fieldValueMap.name, id: customer.id })); //  Предполагаем, API возвращает {name: "Объект", id: "ID", ...}
 
-                    // 2. Получаем объекты проектирования
-                    $.getJSON("/data/objects/4dba8a9f-20c8-45eb-866b-966163d7ba02", function (customersData) { // Пока получаем заказчиков как объекты проектирования по конкретной константе
-                        objects = customersData.map(customer => ({ name: customer.fieldValueMap.name, id: customer.id })); //  Предполагаем, API возвращает {name: "Заказчик", id: "ID", ...}
-
-                        var tableData = [];
-                        objects.forEach(function (object) {
-                            var rowData = [object.name]; // Первый столбец - название объекта
-                            marksData.forEach(function (mark) {
-                                rowData.push('<input type="checkbox" data-object-id="' + object.id + '" data-mark-code="' + mark.fieldValueMap.code + '">'); // Чекбоксы, data-mark-code вместо data-mark-name
-                            });
-                            tableData.push(rowData);
+                    var tableData = [];
+                    objects.forEach(function (object) {
+                        var rowData = [object.name]; // Первый столбец - название объекта
+                        marksData.forEach(function (mark) {
+                            rowData.push('<input type="checkbox" data-object-id="' + object.id + '" data-mark-code="' + mark.fieldValueMap.code + '">'); // Чекбоксы, data-mark-code вместо data-mark-name
                         });
-
-                        //console.log('columns:', columns);
-                        initDataTable(columns, tableData); // Инициализируем DataTables ПОСЛЕ получения всех данных и создания columns и data
+                        tableData.push(rowData);
                     });
+
+                    //console.log('columns:', columns);
+                    initDataTable(columns, tableData); // Инициализируем DataTables ПОСЛЕ получения всех данных и создания columns и data
+                });
                 });
             }
 
@@ -101,8 +95,11 @@
                     contentType: 'application/json',
                     data: JSON.stringify({ projectName: projectName, selectionMatrix: selectionMatrix }),
                     success: function (response) {
+                        // Очищаем поле ввода названия проекта
+                        $('#projectName').val(''); 
+                        $('#selectionMatrix input[type="checkbox"]').prop('checked', false);
+
                         alert("Проект успешно создан! ID: " + response.projectId);
-                        // Можно добавить обновление списка проектов или другие действия после создания
                     },
                     error: function (error) {
                         alert("Ошибка создания проекта: " + error.responseJSON.error);

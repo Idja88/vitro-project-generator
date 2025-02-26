@@ -1,5 +1,6 @@
-from flask import Blueprint, jsonify, request # Импортируй request
+from flask import Blueprint, jsonify, request, current_app
 from database import create_project, get_project_list, get_project # Импортируй функции для работы с БД
+from vitro_cad_api import get_mp_token, update_mp_list # Импортируй функцию для обновления списка в Vitro-CAD MP
 
 bp = Blueprint('projects', __name__, url_prefix='/projects')
 
@@ -11,10 +12,23 @@ def create_new_project():
     if not project_data or not project_data.get('projectName') or not project_data.get('selectionMatrix'):
         return jsonify({"error": "Некорректные данные проекта"}), 400
 
-    project_name = project_data['projectName']
-    selection_matrix = project_data['selectionMatrix'] # Предполагаем, что frontend отправляет матрицу в JSON
+    token = get_mp_token()
+    if not token:
+        return jsonify({"error": "Не удалось получить токен Vitro-CAD MP"}), 500
+    
+    vitro_cad_data = [{
+        "list_id" : current_app.config['PROJECT_LIST_ID'],
+        "content_type_id" : current_app.config['PROJECT_CT_ID'],
+        "name": project_data['projectName']
+    }]
 
-    project_id = create_project(project_name, selection_matrix) # Сохраняем проект в SQLite
+    vitro_cad_project = update_mp_list(token, vitro_cad_data)
+
+    project_name = project_data['projectName']
+    selection_matrix = project_data['selectionMatrix']
+    vitro_cad_id = vitro_cad_project[0]['id']
+
+    project_id = create_project(project_name, selection_matrix, vitro_cad_id) # Сохраняем проект в SQLite
 
     if not project_id:
         return jsonify({"error": "Не удалось создать проект в базе данных"}), 500

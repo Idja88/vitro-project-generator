@@ -17,7 +17,6 @@ app.register_blueprint(data.bp)
 
 @app.route('/')
 def index():
-    """Главная страница приложения."""
     return render_template('index.html') # Отдаем index.html шаблон
 
 # ... остальной код app.py (например, запуск приложения) ...

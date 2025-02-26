@@ -28,14 +28,14 @@ def init_db():
     conn.close()
 
 # Функции для работы с проектами
-def create_project(project_name, selection_matrix):
+def create_project(project_name, selection_matrix, vitro_cad_id):
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            INSERT INTO projects (project_name, selection_matrix_json)
-            VALUES (?, ?)
-        """, (project_name, json.dumps(selection_matrix))) # Сохраняем матрицу как JSON
+            INSERT INTO projects (project_name, selection_matrix_json, vitro_cad_id)
+            VALUES (?, ?, ?)
+        """, (project_name, json.dumps(selection_matrix), vitro_cad_id)) # Сохраняем матрицу как JSON
         conn.commit()
         project_id = cursor.lastrowid # Получаем ID последней вставленной строки
         return project_id

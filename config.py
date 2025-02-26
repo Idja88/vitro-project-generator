@@ -14,10 +14,14 @@ class Config:
     VITRO_CAD_ADMIN_PASSWORD = os.getenv("VITRO_CAD_ADMIN_PASSWORD")
     VITRO_CAD_AUTH_TOKEN = os.getenv("VITRO_CAD_AUTH_TOKEN") # Если используется токен
 
-    CUSTOMER_FOLDER_CT_ID = os.getenv("CUSTOMER_FOLDER_CT_ID")
-    OBJECT_FOLDER_CT_ID = os.getenv("OBJECT_FOLDER_CT_ID")
-    MARKS_LIST_PARENT_ID = os.getenv("MARKS_LIST_PARENT_ID")
-    OBJECTS_LIST_PARENT_ID = os.getenv("OBJECTS_LIST_PARENT_ID")
+    PROJECT_LIST_ID = os.getenv("PROJECT_LIST_ID")
+    MARK_LIST_ID = os.getenv("MARK_LIST_ID")
+    OBJECT_LIST_ID = os.getenv("OBJECT_LIST_ID")
+
+    PROJECT_CT_ID = os.getenv("PROJECT_CT_ID")
+    CUSTOMER_CT_ID = os.getenv("CUSTOMER_CT_ID")
+    OBJECT_CT_ID = os.getenv("OBJECT_CT_ID")
+    MARK_CT_ID = os.getenv("MARK_CT_ID")
 
     # Database Configuration (если необходимо, для MVP можно пока опустить)
     # SQLITE_DATABASE_URI = os.getenv("DATABASE_URL") # Пример для SQLite URI
