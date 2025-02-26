@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Генератор Проектов</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <style>
+        /* Немного CSS для стилизации, по желанию */
+        body { font-family: sans-serif; }
+        #selectionMatrix { width: 100%; }
+        #selectionMatrix td { text-align: center; }
+    </style>
+</head>
+<body>
+    <h1>Генератор Проектов</h1>
+
+    <div>
+        <label for="projectName">Название проекта:</label>
+        <input type="text" id="projectName" name="projectName">
+    </div>
+
+    <table id="selectionMatrix">
+        <thead>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <button id="createProjectBtn">Создать Проект</button>
+
+    <script>
+        $(document).ready(function () {
+            var marks = []; // Массив для хранения марок комплектов
+            var objects = []; // Массив для хранения объектов проектирования
+            var dataTable; // Переменная для хранения объекта DataTables
+
+            // Функция для инициализации DataTables
+            function initDataTable(columns, data) {
+                dataTable = $('#selectionMatrix').DataTable({
+                    columns: columns, // Используем динамически созданные columns
+                    data: data // Используем динамически созданные data
+                });
+                console.log('DataTables initialized:', dataTable); // <---- Добавьте эту строку
+                if ($.fn.DataTable.isDataTable('#selectionMatrix')) { // <---- Добавьте эту проверку
+                    console.log('DataTables isDataTable check: true');
+                } else {
+                    console.error('DataTables isDataTable check: false - initialization failed?'); // <---- И это
+                }
+            }
+
+            // Функция для загрузки данных и заполнения таблицы
+            function loadData() {
+                // 1. Получаем марки комплектов
+                $.getJSON("/data/marks", function (marksData) {
+                    marks = marksData; // Сохраняем полный массив данных о марках
+                    //console.log('marksData:', marksData);
+                    var columns = [{ title: "Объект проектирования" }]; // Начинаем с первого столбца "Объект проектирования"
+                    marksData.forEach(function (mark) {
+                        columns.push({ title: mark.fieldValueMap.code }); // Используем mark.fieldValueMap.code для заголовков
+                    });
+
+                    // 2. Получаем объекты проектирования
+                    $.getJSON("/data/objects/4dba8a9f-20c8-45eb-866b-966163d7ba02", function (customersData) { // Пока получаем заказчиков как объекты проектирования по конкретной константе
+                        objects = customersData.map(customer => ({ name: customer.fieldValueMap.name, id: customer.id })); //  Предполагаем, API возвращает {name: "Заказчик", id: "ID", ...}
+
+                        var tableData = [];
+                        objects.forEach(function (object) {
+                            var rowData = [object.name]; // Первый столбец - название объекта
+                            marksData.forEach(function (mark) {
+                                rowData.push('<input type="checkbox" data-object-id="' + object.id + '" data-mark-code="' + mark.fieldValueMap.code + '">'); // Чекбоксы, data-mark-code вместо data-mark-name
+                            });
+                            tableData.push(rowData);
+                        });
+
+                        //console.log('columns:', columns);
+                        initDataTable(columns, tableData); // Инициализируем DataTables ПОСЛЕ получения всех данных и создания columns и data
+                    });
+                });
+            }
+
+            // Обработчик нажатия кнопки "Создать Проект"
+            $('#createProjectBtn').click(function () {
+                var projectName = $('#projectName').val();
+                var selectionMatrix = {};
+
+                objects.forEach(function (object) {
+                    selectionMatrix[object.name] = [];
+                    marks.forEach(function (mark) {
+                        var checkbox = $('input[type="checkbox"][data-object-id="' + object.id + '"][data-mark-code="' + mark.fieldValueMap.code + '"]'); // Используем data-mark-code
+                        if (checkbox.is(':checked')) {
+                            selectionMatrix[object.name].push(mark.fieldValueMap.code); // Используем mark.fieldValueMap.code для матрицы
+                        }
+                    });
+                });
+
+                $.ajax({
+                    url: '/projects/create', // URL для создания проекта на backend
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ projectName: projectName, selectionMatrix: selectionMatrix }),
+                    success: function (response) {
+                        alert("Проект успешно создан! ID: " + response.projectId);
+                        // Можно добавить обновление списка проектов или другие действия после создания
+                    },
+                    error: function (error) {
+                        alert("Ошибка создания проекта: " + error.responseJSON.error);
+                    }
+                });
+            });
+
+            //console.log($('#selectionMatrix').length)
+            loadData();      // Запускаем загрузку данных, инициализация DataTables будет внутри loadData после получения данных
+        });
+    </script>
+</body>
+</html>
