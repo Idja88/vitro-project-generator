@@ -103,7 +103,7 @@ $(document).ready(function () {
         var selectionMatrix = {};
 
         objects.forEach(function (object) {
-            selectionMatrix[object.name] = [];
+            selectionMatrix[object.id] = [];
             marks.forEach(function (mark) {
                 var checkbox = $('input[type="checkbox"][data-object-id="' + object.id + '"][data-mark-id="' + mark.id + '"]'); // Используем data-mark-code
                 if (checkbox.is(':checked')) {

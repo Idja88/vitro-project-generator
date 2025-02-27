@@ -23,9 +23,6 @@ class Config:
     OBJECT_CT_ID = os.getenv("OBJECT_CT_ID")
     MARK_CT_ID = os.getenv("MARK_CT_ID")
 
-    # Database Configuration (если необходимо, для MVP можно пока опустить)
-    # SQLITE_DATABASE_URI = os.getenv("DATABASE_URL") # Пример для SQLite URI
-
 # Конфигурация для development
 class DevelopmentConfig(Config):
     """Конфигурация для режима разработки."""
