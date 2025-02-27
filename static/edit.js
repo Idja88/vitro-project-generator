@@ -18,37 +18,38 @@ $(document).ready(function () {
 
     function loadProjectData(projectId) {
         if (!projectId) {
-            return; // Ничего не делаем, если проект не выбран (таблица уже должна быть пустой или с placeholder)
+            return;
         }
     
         $.getJSON(`/data/projects/${projectId}`, function (projectData) {
             console.log("Данные проекта получены:", projectData);
+            // Получаем строку selection_matrix из projectData
+            var selectionMatrixString = projectData.fieldValueMap.selection_matrix;
     
-            var selectionMatrix = projectData.fieldValueMap.selection_matrix;
-            var projectName = projectData.fieldValueMap.name;
-            
-            //console.log("selectionMatrix:", selectionMatrix);
-            // Теперь нам НЕ НУЖНО заново строить таблицу! Таблица уже должна быть построена при выборе заказчика!
-            // Просто находим таблицу и отмечаем чекбоксы
+            // Преобразуем строку selectionMatrixString в JavaScript объект
+            var selectionMatrix = JSON.parse(selectionMatrixString);
     
-            if (selectionMatrix) { // Проверка, что selectionMatrix существует и не null
-                for (const objectId in selectionMatrix) { // Итерируем по ключам selectionMatrix, которые теперь являются objectId
-                    //console.log('objectId:', objectId);
-                    if (selectionMatrix.hasOwnProperty(objectId)) { // Проверка, что ключ - собственное свойство объекта (безопасность)
-                        const markIds = selectionMatrix[objectId]; // Получаем массив markIds для текущего objectId
-            
-                        if (Array.isArray(markIds)) { // Проверка, что markIds - массив
-                            markIds.forEach(function (markId) { // Итерируем по массиву markIds
-                                // Находим чекбокс по objectId и markId и устанавливаем checked = true
+            if (selectionMatrix) {
+                for (const objectId in selectionMatrix) {
+                    if (selectionMatrix.hasOwnProperty(objectId)) {
+                        const markIds = selectionMatrix[objectId];
+                        console.log("  objectId:", objectId);
+                        console.log("  Значение markIds перед проверкой isArray:", markIds);
+    
+                        if (Array.isArray(markIds)) {
+                            console.log("  markIds (массив):", markIds);
+                            markIds.forEach(function (markId) {
                                 const lowerObjectId = objectId.toLowerCase();
                                 const lowerMarkId = markId.toLowerCase();
                                 var checkbox = $(`#selectionMatrix input[type="checkbox"][data-object-id="${lowerObjectId}"][data-mark-id="${lowerMarkId}"]`);
-                                if (checkbox.length) { // Проверяем, найден ли чекбокс
-                                    checkbox.prop('checked', true); // Отмечаем чекбокс
+                                if (checkbox.length) {
+                                    checkbox.prop('checked', true);
                                 } else {
-                                    console.warn(`Чекбокс для objectId: ${objectId}, markId: ${markId} не найден в таблице.`); // Предупреждение для отладки
+                                    console.warn(`    ПРЕДУПРЕЖДЕНИЕ: Чекбокс НЕ НАЙДЕН для objectId: ${objectId}, markId: ${markId}`);
                                 }
                             });
+                        } else {
+                            console.warn("  ВНИМАНИЕ: markIds НЕ является массивом для objectId:", objectId);
                         }
                     }
                 }
