@@ -1,12 +1,8 @@
 from flask import Flask, render_template
 from config import configure_app
-from routes import projects, data # Импортируем Blueprints
-from database import init_db
+from routes import projects, data
 
 app = Flask(__name__)
-
-# Инициализируем базу данных
-init_db()
 
 # Конфигурируем приложение
 configure_app(app) # Вызываем configure_app для настройки
@@ -17,9 +13,15 @@ app.register_blueprint(data.bp)
 
 @app.route('/')
 def index():
-    return render_template('index.html') # Отдаем index.html шаблон
+    return render_template('index.html')
 
-# ... остальной код app.py (например, запуск приложения) ...
+@app.route('/create')
+def create_project_page():
+    return render_template('create.html')
+
+@app.route('/edit')
+def edit_project_page():
+    return render_template('edit.html')
 
 if __name__ == '__main__':
     app.run(debug=app.config['DEBUG']) # Используем app.config['DEBUG'] для режима отладки

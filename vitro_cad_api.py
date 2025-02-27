@@ -36,22 +36,12 @@ def update_mp_list(mp_token, data):
         print(f"Error updating MP list: {e}")
         return None
 
-# Получаем элемент списка по имени из Vitro-CAD MP
-def get_mp_list_item_by_name(mp_token, parent_id, name, content_type_id=None):
-    if not name:
-        return None
-    
+# Получаем элемент списка по ID из Vitro-CAD MP
+def get_mp_item(mp_token, item_id, query=None):
     mp_url = current_app.config['VITRO_CAD_API_BASE_URL']
-    url_string = f"{mp_url}/api/item/getRecursive/{parent_id}"
-
-    filter_conditions = [f'item.GetValueAsString(\"name\") == \"{name}\"']
-    if content_type_id:
-        filter_conditions.append(f'item.ContentTypeId == Guid(\"{content_type_id}\")')
-
-    filter_string = ' && '.join(filter_conditions)
-    payload = {"query": f"item => {filter_string}"}
+    url_string = f"{mp_url}/api/item/get/{item_id}"
     headers = {'Authorization': mp_token}
-
+    payload = {"query": query} if query else None
     try:
         with requests.post(url=url_string, headers=headers, json=payload) as response:
             response.raise_for_status()
@@ -60,7 +50,7 @@ def get_mp_list_item_by_name(mp_token, parent_id, name, content_type_id=None):
                 return response_json
             return None
     except requests.exceptions.RequestException as e:
-        print(f"Error looking up MP list item by name: {e}")
+        print(f"Error looking up MP list item by ID: {e}")
         return None
 
 # Получаем дочерние элементы списка из Vitro-CAD MP, используя разные методы рекурсивного или обычного получения
