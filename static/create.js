@@ -28,6 +28,8 @@ $(document).ready(function () {
     // Функция для инициализации DataTables
     function initDataTable(columns, data) {
         dataTable = $('#selectionMatrix').DataTable({
+            paging: false, // Отключаем пагинацию
+            searching: false, // Отключаем поиск
             columns: columns, // Используем динамически созданные columns
             data: data // Используем динамически созданные data
         });
