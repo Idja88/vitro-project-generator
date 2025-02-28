@@ -5,7 +5,7 @@ $(document).ready(function () {
 
     // *** Код для загрузки и заполнения Dropdown заказчиков ***
     function loadCustomersDropdown() {
-        $.getJSON('/data/customers', function (customers) {
+        $.getJSON('/get/customers', function (customers) {
             var dropdown = $('#customerDropdown'); // Находим Dropdown по id
             dropdown.empty(); // Очищаем Dropdown от начальной опции "Загрузка..."
 
@@ -33,55 +33,73 @@ $(document).ready(function () {
         });
     }
 
-    // Функция для загрузки данных и заполнения таблицы
     function loadDataTable(customerId) {
-
-        if (!customerId) { // Если customerId не передан или пустой
-            // Очистить таблицу или показать сообщение "Выберите заказчика"
-            if (dataTable) { // Проверка инициализирована ли таблица
-                dataTable.clear().draw(); // Очистить данные таблицы, если она инициализирована
+        if (!customerId) {
+            // Очистить таблицу или показать сообщение "Выберите заказчика" (как и раньше)
+            if (dataTable) {
+                dataTable.clear().draw();
             } else {
-                // Если таблица еще не инициализирована, можно показать сообщение в placeholder таблицы (если placeholder есть в HTML)
                 $('#selectionMatrix tbody').html('<tr><td valign="top" colspan="4" class="dataTables_empty">Выберите заказчика для отображения объектов</td></tr>');
             }
-            return; // Выйти из функции, если заказчик не выбран
+            return;
         }
-
-        // 1. Получаем марки комплектов
-        $.getJSON('/data/marks', function (marksData) {
-            marks = marksData; // Сохраняем полный массив данных о марках
-            //console.log('marksData:', marksData);
-            var columns = [{ title: "Объект проектирования" }]; // Начинаем с первого столбца "Объект проектирования"
-            marksData.forEach(function (mark) {
-                columns.push({ title: mark.fieldValueMap.code }); // Используем mark.fieldValueMap.code для заголовков
+    
+        // Объявляем функции для загрузки марок и объектов, возвращающие Promise
+        const loadMarksData = () => {
+            return new Promise((resolve, reject) => {
+                $.getJSON('/get/marks', function (marksData) {
+                    marks = marksData; // Сохраняем полный массив данных о марках (глобально, если нужно)
+                    resolve(marksData); // Разрешаем Promise и передаем marksData
+                }).fail(function(jqXHR, textStatus, errorThrown) {
+                    console.error("Ошибка загрузки марок:", textStatus, errorThrown);
+                    reject("Ошибка загрузки марок: " + textStatus + " " + errorThrown); // Отклоняем Promise в случае ошибки
+                });
             });
-        
-
-            // 2. Получаем объекты проектирования
-            $.getJSON(`/data/objects/${customerId}`, function (objectsData) { // Пока получаем объекты проектирования по конкретной константе
-                objects = objectsData.map(object => ({ name: object.fieldValueMap.name, id: object.id })); //  Предполагаем, API возвращает {name: "Объект", id: "ID", ...}
-
+        };
+    
+        const loadObjectsData = () => {
+            return new Promise((resolve, reject) => {
+                $.getJSON(`/get/objects/${customerId}`, function (objectsData) {
+                    objects = objectsData // Сохраняем objects (глобально, если нужно)
+                    resolve(objectsData); // Разрешаем Promise и передаем objectsData
+                }).fail(function(jqXHR, textStatus, errorThrown) {
+                    console.error("Ошибка загрузки объектов:", textStatus, errorThrown);
+                    reject("Ошибка загрузки объектов: " + textStatus + " " + errorThrown); // Отклоняем Promise в случае ошибки
+                });
+            });
+        };
+    
+        Promise.all([loadMarksData(), loadObjectsData()]) // Запускаем оба Promise параллельно
+            .then(([marksData, objectsData]) => { // Когда оба Promise выполнены успешно, получаем результаты
+    
+                // **Теперь у нас есть marksData и objectsData, можно создавать таблицу**
+    
+                var columns = [{ title: "Объект проектирования" }];
+                marksData.forEach(function (mark) {
+                    columns.push({ title: mark.fieldValueMap.code });
+                });
+    
                 var tableData = [];
-                objects.forEach(function (object) {
-                    var rowData = [object.name]; // Первый столбец - название объекта
+                objectsData.forEach(function (object) {
+                    var rowData = [object.fieldValueMap.name];
                     marksData.forEach(function (mark) {
-                        rowData.push('<input type="checkbox" data-object-id="' + object.id + '" data-mark-id="' + mark.id + '">'); // Чекбоксы
+                        rowData.push('<input type="checkbox" data-object-id="' + object.id + '" data-mark-id="' + mark.id + '">');
                     });
                     tableData.push(rowData);
                 });
-
-            //console.log('columns:', columns);
-            initDataTable(columns, tableData); // Инициализируем DataTables ПОСЛЕ получения всех данных и создания columns и data
-
-            }).fail(function(jqXHR, textStatus, errorThrown) {
-                console.error("Ошибка загрузки объектов:", textStatus, errorThrown);
-                alert("Ошибка загрузки объектов. Пожалуйста, попробуйте еще раз.");
-                if (dataTable) { // Проверка инициализирована ли таблица
-                    dataTable.clear().draw(); // Очистить данные таблицы, если она инициализирована
+    
+                initDataTable(columns, tableData); // Инициализируем DataTables
+                console.log("Таблица DataTables успешно инициализирована после загрузки данных."); // Подтверждение в консоли
+    
+            })
+            .catch(error => { // Обрабатываем ошибки, если хотя бы один из Promise будет отклонен
+                console.error("Ошибка при загрузке данных для таблицы:", error);
+                alert("Ошибка загрузки данных для таблицы. Пожалуйста, попробуйте еще раз.");
+                if (dataTable) {
+                    dataTable.clear().draw();
                 }
-                $('#selectionMatrix tbody').html('<tr><td valign="top" colspan="4" class="dataTables_empty">Ошибка загрузки объектов. Пожалуйста, обновите страницу.</td></tr>'); // Сообщение об ошибке в таблицу;
+                $('#selectionMatrix tbody').html('<tr><td valign="top" colspan="4" class="dataTables_empty">Ошибка загрузки данных. Пожалуйста, обновите страницу.</td></tr>');
             });
-        });
     }
 
     $('#customerDropdown').change(function() { // Обработчик события change для Dropdown
@@ -113,14 +131,15 @@ $(document).ready(function () {
         });
 
         $.ajax({
-            url: '/projects/create', // URL для создания проекта на backend
+            url: '/set/create', // URL для создания проекта на backend
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ projectName: projectName, selectionMatrix: selectionMatrix }),
             success: function (response) {
                 // Очищаем поле ввода названия проекта
                 $('#projectName').val(''); 
-                $('#selectionMatrix input[type="checkbox"]').prop('checked', false);
+                //$('#selectionMatrix input[type="checkbox"]').prop('checked', false);
+                $('#customerDropdown').val(''); // Сбрасываем выбор заказчика после создания проекта
 
                 alert("Проект успешно создан! ID: " + response);
             },
@@ -130,7 +149,7 @@ $(document).ready(function () {
         });
     });
 
-    //console.log($('#selectionMatrix').length)
-    //loadData();      // Запускаем загрузку данных, инициализация DataTables будет внутри loadData после получения данных
-    loadCustomersDropdown(); // Запускаем загрузку заказчиков
+    if ($('#customerDropdown').length) { // Проверяем, есть ли элемент с ID customerDropdown на странице (только на edit_project.html)
+        loadCustomersDropdown(); // Загружаем Dropdown заказчиков на странице edit_project.html
+    }
 });

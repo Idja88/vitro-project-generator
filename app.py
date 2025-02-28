@@ -1,6 +1,6 @@
 from flask import Flask, render_template
 from config import configure_app
-from routes import projects, data
+from routes import set, get
 
 app = Flask(__name__)
 
@@ -8,8 +8,8 @@ app = Flask(__name__)
 configure_app(app) # Вызываем configure_app для настройки
 
 # Регистрируем Blueprints
-app.register_blueprint(projects.bp)
-app.register_blueprint(data.bp)
+app.register_blueprint(set.bp)
+app.register_blueprint(get.bp)
 
 @app.route('/')
 def index():

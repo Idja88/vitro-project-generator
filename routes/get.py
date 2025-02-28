@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, current_app
 import vitro_cad_api as vc
 
-bp = Blueprint('data', __name__, url_prefix='/data')
+bp = Blueprint('get', __name__, url_prefix='/get')
 
 # Получает список заказчиков
 @bp.route('/customers', methods=['GET'])
