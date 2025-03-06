@@ -49,32 +49,32 @@ def create_new_project():
     if isinstance(selection_matrix, str):
         selection_matrix = json.loads(selection_matrix)
 
-    for object_folder, marks in selection_matrix.items():
+    for object_folder in selection_matrix['objects']:
         
-        object__folder_income_data = [{
+        object_folder_income_data = [{
             "list_id" : current_app.config['DOCUMENT_LIST_ID'],
             "parent_id": project_folder_data[0]['id'],
             "content_type_id" : current_app.config['OBJECT_FOLDER_CT_ID'],
-            "name": object_folder,
-            "object_list_lookup": object_folder
+            "name": object_folder['name'],
+            "object_list_lookup": object_folder['id']
         }]
 
-        object_data = update_mp_list(token, object__folder_income_data)
+        object_data = update_mp_list(token, object_folder_income_data)
 
         if not object_data:
             return jsonify({"error": "Не удалось создать объект проекта"}), 500
 
-        for mark_folder in marks:
+        for mark_folder in object_folder['marks']:
 
-            mark__folder_income_data = [{
+            mark_folder_income_data = [{
                 "list_id" : current_app.config['DOCUMENT_LIST_ID'],
                 "parent_id": object_data[0]['id'],
                 "content_type_id" : current_app.config['MARK_FOLDER_CT_ID'],
-                "name": mark_folder,
-                "sheet_set_lookup": mark_folder
+                "name": mark_folder['name'],
+                "sheet_set_lookup": mark_folder['id']
             }]
 
-            mark_data = update_mp_list(token, mark__folder_income_data)
+            mark_data = update_mp_list(token, mark_folder_income_data)
 
             if not mark_data:
                 return jsonify({"error": "Не удалось создать марку проекта"}), 500

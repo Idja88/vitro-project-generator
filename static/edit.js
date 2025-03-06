@@ -135,31 +135,36 @@ $(document).ready(function () {
 
             // **Добавляем заполнение поля "Название проекта"**
             $('#projectName').val(projectData.fieldValueMap.name); // Используем projectData.fieldValueMap.name
-    
-            if (selectionMatrix) {
-                for (const objectId in selectionMatrix) {
-                    if (selectionMatrix.hasOwnProperty(objectId)) {
-                        const markIds = selectionMatrix[objectId];
-                        console.log("  objectId:", objectId);
-                        console.log("  Значение markIds перед проверкой isArray:", markIds);
-    
-                        if (Array.isArray(markIds)) {
-                            console.log("  markIds (массив):", markIds);
-                            markIds.forEach(function (markId) {
-                                const lowerObjectId = objectId.toLowerCase();
-                                const lowerMarkId = markId.toLowerCase();
-                                var checkbox = $(`#selectionMatrix input[type="checkbox"][data-object-id="${lowerObjectId}"][data-mark-id="${lowerMarkId}"]`);
-                                if (checkbox.length) {
-                                    checkbox.prop('checked', true);
-                                } else {
-                                    console.warn(`    ПРЕДУПРЕЖДЕНИЕ: Чекбокс НЕ НАЙДЕН для objectId: ${objectId}, markId: ${markId}`);
-                                }
-                            });
-                        } else {
-                            console.warn("  ВНИМАНИЕ: markIds НЕ является массивом для objectId:", objectId);
-                        }
+
+            if (selectionMatrix && selectionMatrix.objects) {
+                // Перебираем массив объектов
+                selectionMatrix.objects.forEach(function(objectData) {
+                    console.log("  Обработка объекта:", objectData.id);
+                    
+                    // Проверяем наличие массива marks
+                    if (Array.isArray(objectData.marks)) {
+                        console.log("  Марки для объекта:", objectData.marks);
+                        
+                        // Перебираем марки объекта
+                        objectData.marks.forEach(function(mark) {
+                            const lowerObjectId = objectData.id.toLowerCase();
+                            const lowerMarkId = mark.id.toLowerCase();
+                            
+                            var checkbox = $(`#selectionMatrix input[type="checkbox"][data-object-id="${lowerObjectId}"][data-mark-id="${lowerMarkId}"]`);
+                            
+                            if (checkbox.length) {
+                                checkbox.prop('checked', true);
+                                console.log(`    Установлен чекбокс для объекта ${objectData.id} и марки ${mark.id}`);
+                            } else {
+                                console.warn(`    ПРЕДУПРЕЖДЕНИЕ: Чекбокс НЕ НАЙДЕН для objectId: ${objectData.id}, markId: ${mark.id}`);
+                            }
+                        });
+                    } else {
+                        console.warn("  ВНИМАНИЕ: marks не является массивом для объекта:", objectData.id);
                     }
-                }
+                });
+            } else {
+                console.warn("selectionMatrix отсутствует или не содержит массив objects");
             }
     
         }).fail(function(jqXHR, textStatus, errorThrown) {
@@ -168,31 +173,64 @@ $(document).ready(function () {
         });
     }
 
+    function getSelectionMatrix() {
+        var selectionMatrix = { objects: [] };
+    
+        objects.forEach(function (object) {
+            // Сначала проверим, есть ли выбранные марки для этого объекта
+            var hasSelectedMarks = marks.some(function (mark) {
+                var checkbox = $('input[type="checkbox"][data-object-id="' + object.id + '"][data-mark-id="' + mark.id + '"]');
+                return checkbox.is(':checked');
+            });
+    
+            // Если есть хотя бы одна выбранная марка, создаем объект
+            if (hasSelectedMarks) {
+                var objectEntry = {
+                    id: object.id,
+                    name: object.fieldValueMap.name,
+                    folder_structure_id: "",
+                    marks: []
+                };
+    
+                // Добавляем только выбранные марки
+                marks.forEach(function (mark) {
+                    var checkbox = $('input[type="checkbox"][data-object-id="' + object.id + '"][data-mark-id="' + mark.id + '"]');
+                    if (checkbox.is(':checked')) {
+                        var markEntry = {
+                            id: mark.id,
+                            name: mark.fieldValueMap.name,
+                            number: "",
+                            folder_structure_id: ""
+                        };
+                        objectEntry.marks.push(markEntry);
+                    }
+                });
+    
+                selectionMatrix.objects.push(objectEntry);
+            }
+        });
+    
+        return selectionMatrix;
+    }
+
     // Обработчик нажатия кнопки "Сохранить изменения"
     $('#editProjectBtn').click(function () {
         var projectId = $('#projectDropdown').val();
         var projectName = $('#projectName').val();
-        var selectionMatrix = {};
+        var selectionMatrixActual = getSelectionMatrix();
 
-        objects.forEach(function (object) {
-            selectionMatrix[object.id] = [];
-            marks.forEach(function (mark) {
-                var checkbox = $('input[type="checkbox"][data-object-id="' + object.id + '"][data-mark-id="' + mark.id + '"]');
-                if (checkbox.is(':checked')) { // Проверяем, отмечен ли чекбокс
-                    selectionMatrix[object.id].push(mark.id);
-                }
-            });
-        });
 
         $.ajax({
             url: '/set/update', // URL для создания проекта на backend
             type: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify({projectId: projectId, projectName: projectName, selectionMatrix: selectionMatrix}),
+            data: JSON.stringify({projectId: projectId, projectName: projectName, selectionMatrix: selectionMatrixActual}),
             success: function (response) {
                 // Очищаем поле ввода названия проекта
                 //$('#projectName').val(''); 
                 //$('#selectionMatrix input[type="checkbox"]').prop('checked', false);
+
+                // Выводим сообщение об успешном создании проекта
                 alert("Проект успешно изменен! ID: " + response);
             },
             error: function (error) {

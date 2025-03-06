@@ -104,6 +104,46 @@ $(document).ready(function () {
             });
     }
 
+    function getSelectionMatrix() {
+        var selectionMatrix = { objects: [] };
+    
+        objects.forEach(function (object) {
+            // Сначала проверим, есть ли выбранные марки для этого объекта
+            var hasSelectedMarks = marks.some(function (mark) {
+                var checkbox = $('input[type="checkbox"][data-object-id="' + object.id + '"][data-mark-id="' + mark.id + '"]');
+                return checkbox.is(':checked');
+            });
+    
+            // Если есть хотя бы одна выбранная марка, создаем объект
+            if (hasSelectedMarks) {
+                var objectEntry = {
+                    id: object.id,
+                    name: object.fieldValueMap.name,
+                    folder_structure_id: "",
+                    marks: []
+                };
+    
+                // Добавляем только выбранные марки
+                marks.forEach(function (mark) {
+                    var checkbox = $('input[type="checkbox"][data-object-id="' + object.id + '"][data-mark-id="' + mark.id + '"]');
+                    if (checkbox.is(':checked')) {
+                        var markEntry = {
+                            id: mark.id,
+                            name: mark.fieldValueMap.name,
+                            number: "",
+                            folder_structure_id: ""
+                        };
+                        objectEntry.marks.push(markEntry);
+                    }
+                });
+    
+                selectionMatrix.objects.push(objectEntry);
+            }
+        });
+    
+        return selectionMatrix;
+    }
+
     $('#customerDropdown').change(function() { // Обработчик события change для Dropdown
         var selectedCustomerId = $(this).val(); // Получаем ID выбранного заказчика из value option
         console.log('Выбранный ID заказчика:', selectedCustomerId);
@@ -120,29 +160,21 @@ $(document).ready(function () {
     // Обработчик нажатия кнопки "Создать Проект"
     $('#createProjectBtn').click(function () {
         var projectName = $('#projectName').val();
-        var selectionMatrix = {};
-
-        objects.forEach(function (object) {
-            selectionMatrix[object.id] = [];
-            marks.forEach(function (mark) {
-                var checkbox = $('input[type="checkbox"][data-object-id="' + object.id + '"][data-mark-id="' + mark.id + '"]'); // Используем data-mark-code
-                if (checkbox.is(':checked')) {
-                    selectionMatrix[object.id].push(mark.id); // Используем mark.fieldValueMap.code для матрицы
-                }
-            });
-        });
+        var selectionMatrixActual = getSelectionMatrix();
 
         $.ajax({
             url: '/set/create', // URL для создания проекта на backend
             type: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify({ projectName: projectName, selectionMatrix: selectionMatrix }),
+            data: JSON.stringify({ projectName: projectName, selectionMatrix: selectionMatrixActual }),
             success: function (response) {
-                // Очищаем поле ввода названия проекта
+                // Очищаем поля ввода
+                $('#customerDropdown').val('');
                 $('#projectName').val(''); 
                 //$('#selectionMatrix input[type="checkbox"]').prop('checked', false);
-                $('#customerDropdown').val(''); // Сбрасываем выбор заказчика после создания проекта
-
+                dataTable.clear().draw();
+                
+                // Выводим сообщение об успешном создании проекта
                 alert("Проект успешно создан! ID: " + response);
             },
             error: function (error) {
