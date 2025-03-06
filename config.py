@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+from vitro_cad_api import get_mp_token
 
 # Загружаем переменные окружения из файла .env
 load_dotenv()
@@ -12,16 +13,21 @@ class Config:
     VITRO_CAD_API_BASE_URL = os.getenv("VITRO_CAD_API_BASE_URL")
     VITRO_CAD_ADMIN_USERNAME = os.getenv("VITRO_CAD_ADMIN_USERNAME")
     VITRO_CAD_ADMIN_PASSWORD = os.getenv("VITRO_CAD_ADMIN_PASSWORD")
-    VITRO_CAD_AUTH_TOKEN = os.getenv("VITRO_CAD_AUTH_TOKEN") # Если используется токен
+    #VITRO_CAD_AUTH_TOKEN = get_mp_token() # Если используется токен
 
     PROJECT_LIST_ID = os.getenv("PROJECT_LIST_ID")
     MARK_LIST_ID = os.getenv("MARK_LIST_ID")
     OBJECT_LIST_ID = os.getenv("OBJECT_LIST_ID")
+    DOCUMENT_LIST_ID = os.getenv("DOCUMENT_LIST_ID")
 
     PROJECT_CT_ID = os.getenv("PROJECT_CT_ID")
     CUSTOMER_CT_ID = os.getenv("CUSTOMER_CT_ID")
     OBJECT_CT_ID = os.getenv("OBJECT_CT_ID")
     MARK_CT_ID = os.getenv("MARK_CT_ID")
+
+    PROJECT_FOLDER_CT_ID = os.getenv("PROJECT_FOLDER_CT_ID")
+    OBJECT_FOLDER_CT_ID = os.getenv("OBJECT_FOLDER_CT_ID")
+    MARK_FOLDER_CT_ID = os.getenv("MARK_FOLDER_CT_ID")
 
 # Конфигурация для development
 class DevelopmentConfig(Config):
