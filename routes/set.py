@@ -1,20 +1,23 @@
 import json
 from flask import Blueprint, jsonify, request, current_app
-from vitro_cad_api import get_mp_token, update_mp_list # Импортируй функцию для обновления списка в Vitro-CAD MP
+import vitro_cad_api as vc
+from token_store import GlobalToken
+from decorators import require_token
 
 bp = Blueprint('set', __name__, url_prefix='/set')
 
 # Создает новый проект
 @bp.route('/create', methods=['POST'])
+@require_token
 def create_new_project():
     project_data = request.get_json() # Получаем JSON из тела запроса
 
     if not project_data or not project_data.get('projectName') or not project_data.get('selectionMatrix'):
         return jsonify({"error": "Некорректные данные проекта"}), 400
 
-    token = get_mp_token()
-    #token = current_app.config['VITRO_CAD_AUTH_TOKEN']
-    
+    #token = get_mp_token()   
+    token = GlobalToken.token
+
     if not token:
         return jsonify({"error": "Не удалось получить токен Vitro-CAD MP"}), 500
     
@@ -26,7 +29,7 @@ def create_new_project():
         "is_created_by_generator": True
     }]
 
-    project_list_data = update_mp_list(token, project_list_income_data)
+    project_list_data = vc.update_mp_list(token, project_list_income_data)
 
     if not project_list_data:
         return jsonify({"error": "Не удалось создать проект"}), 500
@@ -41,7 +44,7 @@ def create_new_project():
         "project_list_lookup": project_list_data[0]['id']
     }]
 
-    project_folder_data = update_mp_list(token, project_folder_income_data)
+    project_folder_data = vc.update_mp_list(token, project_folder_income_data)
 
     if not project_folder_data:
         return jsonify({"error": "Не удалось создать папку проекта"}), 500
@@ -59,7 +62,7 @@ def create_new_project():
             "object_list_lookup": object_folder['id']
         }]
 
-        object_data = update_mp_list(token, object_folder_income_data)
+        object_data = vc.update_mp_list(token, object_folder_income_data)
 
         if not object_data:
             return jsonify({"error": "Не удалось создать объект проекта"}), 500
@@ -74,7 +77,7 @@ def create_new_project():
                 "sheet_set_lookup": mark_folder['id']
             }]
 
-            mark_data = update_mp_list(token, mark_folder_income_data)
+            mark_data = vc.update_mp_list(token, mark_folder_income_data)
 
             if not mark_data:
                 return jsonify({"error": "Не удалось создать марку проекта"}), 500
@@ -83,6 +86,7 @@ def create_new_project():
 
 # Обновляем уже созданный проект
 @bp.route('/update', methods=['POST'])
+@require_token
 def update_existing_project():
     project_data = request.get_json() # Получаем JSON из тела запроса
 
@@ -90,7 +94,9 @@ def update_existing_project():
     if not project_data or not project_data.get('projectName') or not project_data.get('selectionMatrix'):
         return jsonify({"error": "Некорректные данные проекта"}), 400
 
-    token = get_mp_token()
+    #token = get_mp_token()
+    token = GlobalToken.token
+
     if not token:
         return jsonify({"error": "Не удалось получить токен Vitro-CAD MP"}), 500
     
@@ -103,7 +109,7 @@ def update_existing_project():
         "is_created_by_generator": True
     }]
 
-    project_id = update_mp_list(token, vitro_cad_data)
+    project_id = vc.update_mp_list(token, vitro_cad_data)
 
     if not project_id:
         return jsonify({"error": "Не удалось изменить проект"}), 500

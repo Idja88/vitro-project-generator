@@ -1,12 +1,17 @@
 from flask import Blueprint, jsonify, current_app
+from token_store import GlobalToken
 import vitro_cad_api as vc
+from decorators import require_token
 
 bp = Blueprint('get', __name__, url_prefix='/get')
 
 # Получает список заказчиков
 @bp.route('/customers', methods=['GET'])
+@require_token
 def get_customers():
-    token = vc.get_mp_token() # Получаем токен
+    #token = vc.get_mp_token()
+    token = GlobalToken.token
+
     if not token:
         return jsonify({"error": "Не удалось получить токен Vitro-CAD MP"}), 500
 
@@ -24,8 +29,11 @@ def get_customers():
 
 # Получает список объектов проектирования для конкретного заказчика
 @bp.route('/objects/<customer_id>', methods=['GET'])
+@require_token
 def get_objects_for_customer(customer_id):
-    token = vc.get_mp_token()
+    #token = vc.get_mp_token()
+    token = GlobalToken.token
+
     if not token:
         return jsonify({"error": "Не удалось получить токен Vitro-CAD MP"}), 500
 
@@ -42,8 +50,11 @@ def get_objects_for_customer(customer_id):
 
 # Получает список марок комплектов из Vitro-CAD MP
 @bp.route('/marks', methods=['GET'])
+@require_token
 def get_marks():
-    token = vc.get_mp_token()
+    #token = vc.get_mp_token()
+    token = GlobalToken.token
+
     if not token:
         return jsonify({"error": "Не удалось получить токен Vitro-CAD MP"}), 500
 
@@ -58,8 +69,11 @@ def get_marks():
 
 # Получает список проектов из Vitro-CAD MP
 @bp.route('/projects', methods=['GET'])
+@require_token
 def get_projects():
-    token = vc.get_mp_token()
+    #token = vc.get_mp_token()
+    token = GlobalToken.token
+
     if not token:
         return jsonify({"error": "Не удалось получить токен Vitro-CAD MP"}), 500
 
@@ -76,8 +90,11 @@ def get_projects():
 
 # Получает проект по конкретному ID из Vitro-CAD MP
 @bp.route('/projects/<project_id>', methods=['GET'])
+@require_token
 def get_project_data(project_id):
-    token = vc.get_mp_token()
+    #token = vc.get_mp_token()
+    token = GlobalToken.token
+
     if not token:
         return jsonify({"error": "Не удалось получить токен Vitro-CAD MP"}), 500
 

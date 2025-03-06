@@ -1,6 +1,5 @@
 import os
 from dotenv import load_dotenv
-from vitro_cad_api import get_mp_token
 
 # Загружаем переменные окружения из файла .env
 load_dotenv()
@@ -31,7 +30,6 @@ class Config:
 
 # Конфигурация для development
 class DevelopmentConfig(Config):
-    """Конфигурация для режима разработки."""
     DEBUG = True
 
 # Конфигурация для production

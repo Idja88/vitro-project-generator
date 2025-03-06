@@ -1,6 +1,8 @@
 from flask import Flask, render_template
 from config import configure_app
 from routes import set, get
+from token_store import GlobalToken
+from vitro_cad_api import get_mp_token
 
 app = Flask(__name__)
 
@@ -24,4 +26,13 @@ def edit_project_page():
     return render_template('edit.html')
 
 if __name__ == '__main__':
+
+    # Получаем первичный токен перед запуском
+    with app.app_context():
+        token_data = get_mp_token()
+        if token_data:
+            GlobalToken.set_token(token_data)
+        else:
+            exit(1)
+
     app.run(debug=app.config['DEBUG']) # Используем app.config['DEBUG'] для режима отладки
