@@ -25,6 +25,10 @@ def create_project_page():
 def edit_project_page():
     return render_template('edit.html')
 
+@app.route('/proto')
+def edit_project_page_proto():
+    return render_template('proto.html')
+
 if __name__ == '__main__':
 
     # Получаем первичный токен перед запуском

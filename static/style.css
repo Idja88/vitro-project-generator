@@ -1,0 +1,69 @@
+/* Основные стили таблицы */
+.table-responsive {
+    margin-top: 20px;
+}
+
+/* Стили для модальных окон */
+.modal-dialog {
+    max-width: 500px;
+}
+
+/* Стили для множественного выбора в модальных окнах */
+.form-control[multiple] {
+    min-height: 120px;
+}
+
+/* Стили выделения */
+.selected,
+.column-selected,
+#selectionMatrix tbody tr.selected,
+#selectionMatrix thead th.selected {
+    background-color: #cfe2ff !important;
+    border-color: #9ec5fe !important;
+}
+
+#selectionMatrix thead th:not(:first-child) {
+    cursor: pointer;
+}
+
+/* Эффекты наведения */
+#selectionMatrix thead th:not(:first-child):hover,
+#selectionMatrix tbody td.select-cell:hover {
+    background-color: #e7f1ff !important;
+    cursor: pointer;
+}
+
+/* Предотвращение выделения ячеек с чекбоксами */
+#selectionMatrix td:not(.select-cell) {
+    cursor: default;
+}
+
+#selectionMatrix tbody td.select-cell {
+    cursor: pointer;
+}
+
+.checkbox-cell {
+    cursor: default !important;
+}
+
+/* Центрирование чекбоксов в ячейках */
+.dt-center .form-check-input {
+    position: relative;
+    display: block;
+    margin: 0 auto;
+}
+
+/* Выравнивание содержимого ячеек */
+.dt-center {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+/* Контейнер для чекбокса */
+.checkbox-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+}

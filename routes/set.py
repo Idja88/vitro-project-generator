@@ -20,7 +20,7 @@ def create_new_project():
 
     if not token:
         return jsonify({"error": "Не удалось получить токен Vitro-CAD MP"}), 500
-    
+   
     project_list_income_data = [{
         "list_id" : current_app.config['PROJECT_LIST_ID'],
         "content_type_id" : current_app.config['PROJECT_CT_ID'],
@@ -53,15 +53,23 @@ def create_new_project():
         selection_matrix = json.loads(selection_matrix)
 
     for object_folder in selection_matrix['objects']:
-        
-        object_folder_income_data = [{
+
+        if object_folder['id'] == '00000000-0000-0000-0000-000000000000':
+            object_folder_income_data = [{ 
+                "list_id" : current_app.config['DOCUMENT_LIST_ID'],
+                "parent_id": project_folder_data[0]['id'],
+                "content_type_id" : current_app.config['OBJECT_FOLDER_CT_ID'],
+                "name": object_folder['name']
+            }]
+        else:
+            object_folder_income_data = [{
             "list_id" : current_app.config['DOCUMENT_LIST_ID'],
             "parent_id": project_folder_data[0]['id'],
             "content_type_id" : current_app.config['OBJECT_FOLDER_CT_ID'],
             "name": object_folder['name'],
             "object_list_lookup": object_folder['id']
         }]
-
+        
         object_data = vc.update_mp_list(token, object_folder_income_data)
 
         if not object_data:
@@ -69,12 +77,16 @@ def create_new_project():
 
         for mark_folder in object_folder['marks']:
 
+            if mark_folder['number'] == '':
+                mark_folder['number'] = None
+
             mark_folder_income_data = [{
                 "list_id" : current_app.config['DOCUMENT_LIST_ID'],
                 "parent_id": object_data[0]['id'],
                 "content_type_id" : current_app.config['MARK_FOLDER_CT_ID'],
                 "name": mark_folder['name'],
-                "sheet_set_lookup": mark_folder['id']
+                "sheet_set_lookup": mark_folder['id'],
+                "sheet_set_number": mark_folder['number']
             }]
 
             mark_data = vc.update_mp_list(token, mark_folder_income_data)
