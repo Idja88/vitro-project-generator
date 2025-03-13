@@ -18,11 +18,14 @@
             <label for="projectName">Название проекта:</label>
             <input class="form-control form-control-sm" type="text" id="projectName" name="projectName" required>
         </div>
-        <div class="btn-toolbar mb-3">
+        <div class="btn-toolbar mb-3 d-flex justify-content-between">
             <div class="btn-group">
                 <button id="newRowButton" class="btn btn-primary mr-2">Новая строка</button>
                 <button id="newColumnButton" class="btn btn-primary mr-2">Новый столбец</button>
                 <button id="deleteButton" class="btn btn-danger" disabled>Удалить</button>
+            </div>
+            <div>
+                <button id="createProjectBtn" class="btn btn-success justify-content-end" data-toggle="tooltip" data-placement="bottom" title="Введите название проекта, чтобы активировать кнопку" disabled>Создать Проект</button>
             </div>
         </div>
         <div class="table-responsive">
@@ -36,11 +39,7 @@
                 </tbody>
             </table>
         </div>
-        <button id="createProjectBtn" class="btn btn-primary btn-lg btn-block" data-toggle="tooltip" data-placement="bottom" title="Введите название проекта, чтобы активировать кнопку" disabled>Создать Проект</button>
     
-        
-
-
         <!-- Modal для добавления строк -->
         <div class="modal" id="addRowModal" tabindex="-1" role="dialog">
             <div class="modal-dialog">
