@@ -1,12 +1,10 @@
-from flask import Blueprint, jsonify, current_app, request, redirect, url_for, make_response
-from functools import wraps
+from flask import Blueprint, jsonify, current_app, request, redirect, url_for, make_response, render_template
 import json
 
 bp = Blueprint('callback', __name__, url_prefix='/')
 
 def add_cors_headers(response):
-    """Add required CORS headers for Vitro-CAD MP"""
-    response.headers['Access-Control-Allow-Origin'] = current_app.config.get('VITRO_CAD_HOST', '*')
+    response.headers['Access-Control-Allow-Origin'] = current_app.config.get('VITRO_CAD_API_BASE_URL', '*')
     response.headers['Access-Control-Expose-Headers'] = 'Link-Open, Link-Open-New-Tab'
     return response
 
@@ -41,7 +39,7 @@ def vitro_cad_callback():
 
         # Create response with redirect
         response = make_response()
-        generator_url = url_for('edit_project_page_proto', project_id=project_id)
+        generator_url = url_for('edit_project_page_proto', project_id=project_id, _external=True)
         
         # Add Link-Open header for same-tab redirect
         response.headers['Link-Open-New-Tab'] = generator_url

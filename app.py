@@ -41,4 +41,4 @@ if __name__ == '__main__':
         else:
             exit(1)
 
-    app.run(debug=app.config['DEBUG']) # Используем app.config['DEBUG'] для режима отладки
+    app.run(host='0.0.0.0', port=5000, debug=app.config['DEBUG']) # Используем app.config['DEBUG'] для режима отладки
