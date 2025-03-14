@@ -1,6 +1,6 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from config import configure_app
-from routes import set, get
+from routes import set, get, callback
 from token_store import GlobalToken
 from vitro_cad_api import get_mp_token
 
@@ -12,6 +12,7 @@ configure_app(app) # Вызываем configure_app для настройки
 # Регистрируем Blueprints
 app.register_blueprint(set.bp)
 app.register_blueprint(get.bp)
+app.register_blueprint(callback.bp)
 
 @app.route('/')
 def index():
@@ -27,7 +28,8 @@ def edit_project_page():
 
 @app.route('/proto')
 def edit_project_page_proto():
-    return render_template('proto.html')
+    project_id = request.args.get('project_id')
+    return render_template('proto.html', project_id=project_id)
 
 if __name__ == '__main__':
 
