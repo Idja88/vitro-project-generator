@@ -1,5 +1,4 @@
-from flask import Blueprint, jsonify, current_app, request, redirect, url_for, make_response, render_template
-import json
+from flask import Blueprint, jsonify, current_app, request, url_for, make_response
 
 bp = Blueprint('callback', __name__, url_prefix='/')
 
@@ -11,18 +10,6 @@ def add_cors_headers(response):
 #Handle project generation request from Vitro-CAD MP
 @bp.route('/callback', methods=['POST'])
 def vitro_cad_callback():
-    # Prepare request data for logging
-    request_data = {
-        'headers': dict(request.headers),
-        'data': request.get_json(),
-        'method': request.method,
-        'url': request.url
-    }
-
-    # Save request data to JSON file
-    with open("request.json", 'w', encoding='utf-8') as f:
-        json.dump(request_data, f, ensure_ascii=False, indent=2)
-
     # Validate authorization
     auth_header = request.headers.get('Authorization')
     if not auth_header:
