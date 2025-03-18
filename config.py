@@ -6,13 +6,12 @@ load_dotenv()
 
 # Конфигурация приложения
 class Config:
-    DEBUG = True # По умолчанию включаем режим отладки
-
     # Vitro-CAD MP API Configuration
     VITRO_CAD_API_BASE_URL = os.getenv("VITRO_CAD_API_BASE_URL")
     VITRO_CAD_ADMIN_USERNAME = os.getenv("VITRO_CAD_ADMIN_USERNAME")
     VITRO_CAD_ADMIN_PASSWORD = os.getenv("VITRO_CAD_ADMIN_PASSWORD")
-    #VITRO_CAD_AUTH_TOKEN = get_mp_token() # Если используется токен
+    #VITRO_CAD_AUTH_TOKEN
+    VITRO_CAD_AUTH_TOKEN_MAX_AGE = int(os.getenv('VITRO_CAD_AUTH_TOKEN_MAX_AGE', 86400))
 
     PROJECT_LIST_ID = os.getenv("PROJECT_LIST_ID")
     MARK_LIST_ID = os.getenv("MARK_LIST_ID")
@@ -35,8 +34,18 @@ class DevelopmentConfig(Config):
 # Конфигурация для production
 class ProductionConfig(Config):
     DEBUG = False
-    # Здесь можно будет добавить специфические настройки для production, например,
-    # другой DATABASE_URL, логирование и т.д.
+    
+    SERVER_NAME = os.getenv('SERVER_NAME')
+    APPLICATION_ROOT = os.getenv('APPLICATION_ROOT')
+    PREFERRED_URL_SCHEME = 'https'
+    
+    # Настройки для безопасности
+    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_PATH = os.getenv('SESSION_COOKIE_PATH')
+    SESSION_COOKIE_DOMAIN = os.getenv('COOKIE_DOMAIN')
+    
+    # Настройки для прокси (количество прокси-серверов перед приложением)
+    PROXY_COUNT = int(os.getenv('PROXY_COUNT', 1))
 
 config = {
     'development': DevelopmentConfig,
@@ -47,5 +56,5 @@ config = {
 # Функция для конфигурирования приложения
 def configure_app(app, config_name=None):
     if not config_name:
-        config_name = os.getenv('FLASK_CONFIG') or 'default' # Определяем имя конфигурации из ENV или используем 'default'
+        config_name = os.getenv('FLASK_CONFIG') # Определяем имя конфигурации из ENV или используем 'default'
     app.config.from_object(config[config_name]) # Загружаем конфигурацию в app.config
