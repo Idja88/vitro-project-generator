@@ -14,8 +14,7 @@ def get_mp_token():
         with requests.post(url=url_string, json=mp_login) as response:
             response.raise_for_status()
             response_json = response.json()
-            #token = response_json.get('token')
-            token = response_json
+            token = response_json.get('token')
             return token
     except requests.exceptions.RequestException as e:
         print(f"Error getting MP token: {e}")

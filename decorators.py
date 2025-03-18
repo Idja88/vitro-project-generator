@@ -1,17 +1,25 @@
 from functools import wraps
-from flask import jsonify
-from token_store import GlobalToken
-import vitro_cad_api as vc
+from flask import request, jsonify, current_app
 
 def require_token(f):
     @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not GlobalToken.is_valid():
-            token_data = vc.get_mp_token()
-            if token_data:
-                GlobalToken.set_token(token_data)
-            else:
-                return jsonify({"error": "Не удалось получить токен"}), 500
+    def decorated(*args, **kwargs):
+        token = None
         
+        # Пытаемся получить токен из cookie
+        token = request.cookies.get('mp_token')
+        
+        # Если токен не найден в cookie, проверяем заголовки
+        if not token:
+            if 'Authorization' in request.headers:
+                token = request.headers['Authorization']
+        
+        if not token:
+            current_app.logger.error("Token is missing")
+            return jsonify({'message': 'Отсутствует токен авторизации!'}), 401
+        
+        # Передаем токен в функцию
+        kwargs['token'] = token
         return f(*args, **kwargs)
-    return decorated_function
+    
+    return decorated

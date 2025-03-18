@@ -1,7 +1,6 @@
 import json
 from flask import Blueprint, jsonify, request, current_app
 import vitro_cad_api as vc
-from token_store import GlobalToken
 from decorators import require_token
 
 bp = Blueprint('set', __name__, url_prefix='/set')
@@ -9,17 +8,11 @@ bp = Blueprint('set', __name__, url_prefix='/set')
 # Создает новый проект
 @bp.route('/create', methods=['POST'])
 @require_token
-def create_new_project():
+def create_new_project(token):
     project_data = request.get_json() # Получаем JSON из тела запроса
 
     if not project_data or not project_data.get('projectName') or not project_data.get('selectionMatrix'):
         return jsonify({"error": "Некорректные данные проекта"}), 400
-
-    #token = get_mp_token()   
-    token = GlobalToken.token
-
-    if not token:
-        return jsonify({"error": "Не удалось получить токен Vitro-CAD MP"}), 500
    
     project_list_income_data = [{
         "list_id" : current_app.config['PROJECT_LIST_ID'],
@@ -99,18 +92,11 @@ def create_new_project():
 # Обновляем уже созданный проект
 @bp.route('/update', methods=['POST'])
 @require_token
-def update_existing_project():
+def update_existing_project(token):
     project_data = request.get_json() # Получаем JSON из тела запроса
 
-    print(project_data)
     if not project_data or not project_data.get('projectName') or not project_data.get('selectionMatrix'):
         return jsonify({"error": "Некорректные данные проекта"}), 400
-
-    #token = get_mp_token()
-    token = GlobalToken.token
-
-    if not token:
-        return jsonify({"error": "Не удалось получить токен Vitro-CAD MP"}), 500
     
     vitro_cad_data = [{
         "list_id" : current_app.config['PROJECT_LIST_ID'],
