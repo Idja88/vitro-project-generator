@@ -701,7 +701,7 @@ $(document).ready(function () {
                 initializeTable();
                 
                 // Show success alert
-                showAlert(`Проект "${projectName}" успешно создан! ID: ${response}`, 'success');
+                showAlert(`Проект "${projectName}" успешно создан! ID: ${response.projectId}`, 'success');
             },
             error: function (error) {
                 // Show error alert
