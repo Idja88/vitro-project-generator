@@ -43,7 +43,7 @@ def create_new_project(token):
         return jsonify({"error": "Не удалось создать папку проекта"}), 500
 
     if isinstance(selection_matrix, str):
-        selection_matrix = json.loads(selection_matrix)
+        selection_matrix = jsonify(selection_matrix)
 
     for object_folder in selection_matrix['objects']:
 
