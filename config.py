@@ -36,7 +36,6 @@ class ProductionConfig(Config):
     DEBUG = False
     
     SERVER_NAME = os.getenv('SERVER_NAME')
-    APPLICATION_ROOT = os.getenv('APPLICATION_ROOT')
     PREFERRED_URL_SCHEME = 'https'
     
     # Настройки для безопасности

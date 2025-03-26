@@ -3,28 +3,35 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from config import Config, configure_app
 from routes import set, get, callback
 import os
+from prefix_middleware import PrefixMiddleware
 
 def create_app(config_class=Config):
-
-    # Инициализация приложения с учетом production-настроек
-    env = os.getenv('FLASK_CONFIG')
+    # Инициализация приложения
+    app = Flask(__name__)
     
-    if env == 'production':
-        static_url_path = f"{os.getenv('APPLICATION_ROOT')}/static"
-        static_folder = 'static'
-    else:
-        static_url_path = '/static'
-        static_folder = 'static'
-
-    app = Flask(__name__, static_url_path=static_url_path, static_folder=static_folder)
-
     # Конфигурируем приложение
-    configure_app(app, env) # Вызываем configure_app для настройки
-
-        # Настройка ProxyFix для работы за прокси
+    env = os.getenv('FLASK_CONFIG', 'default')
+    configure_app(app, env)
+    
+    # Применяем ProxyFix для правильной обработки заголовков за прокси
     if env == 'production':
-        proxy_count = app.config.get('PROXY_COUNT', 1)
+        proxy_count = int(os.getenv('PROXY_COUNT', 1))
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=proxy_count, x_proto=proxy_count, x_host=proxy_count, x_prefix=proxy_count)
+        
+        # Применяем PrefixMiddleware только в production среде
+        prefix = os.getenv('PREFIX', '')
+        app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix=prefix)
+        
+        # Настройки для cookie с учетом префикса
+        app.config['SESSION_COOKIE_PATH'] = prefix
+        app.config['SESSION_COOKIE_SECURE'] = True
+    
+    @app.context_processor
+    def inject_globals():
+        prefix = os.getenv('PREFIX', '')
+        return {
+            'app_prefix': prefix
+        }
 
     # Регистрируем Blueprints
     app.register_blueprint(set.bp)
@@ -51,4 +58,4 @@ def create_app(config_class=Config):
 
 if __name__ == '__main__':
     app = create_app()
-    app.run(host='0.0.0.0', port=5000, debug=app.config['DEBUG']) # Используем app.config['DEBUG'] для режима отладки
+    app.run(host='0.0.0.0', port=5000, debug=app.config.get('DEBUG', False))

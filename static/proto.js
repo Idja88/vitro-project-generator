@@ -6,6 +6,13 @@ $(document).ready(function () {
     var selectedRows = [];
     var selectedColumns = [];
 
+    $.ajaxPrefilter(function(options) {
+        if (options.url.startsWith('/') && APP_CONFIG.PREFIX) {
+            const originalUrl = options.url;
+            options.url = APP_CONFIG.PREFIX + options.url;
+        }
+    });
+
     // 2. Utility Functions
     function getCheckboxStates() {
         var states = [];
