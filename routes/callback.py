@@ -32,18 +32,24 @@ def get_external_url(endpoint, **values):
 def vitro_cad_callback():
     # Validate authorization
     auth_header = request.headers.get('Authorization')
+
     if not auth_header:
         return jsonify({"exception": {"message": "Отсутствует заголовок Authorization"}}), 401
+    
+    token = auth_header
 
     try:
         # Validate request data
         data = request.get_json()
+
         if not data or 'itemIdList' not in data or not data['itemIdList']:
             return jsonify({"exception": {"message": "Некорректный формат запроса. Ожидается itemIdList."}}), 400
 
-        project_id = data['itemIdList'][0]
-        token = auth_header
+        if len(data['itemIdList']) != 1:
+            return jsonify({"exception": {"message": "Некорректный формат запроса. Ожидается один элемент в itemIdList."}}), 400
 
+        project_id = data['itemIdList'][0]
+        
         # Create response with redirect
         response = make_response()
         generator_url = url_for('edit_project_page_proto', project_id=project_id, _external=True)
