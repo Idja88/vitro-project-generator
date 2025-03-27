@@ -252,6 +252,21 @@ $(document).ready(function () {
     }
 
     // 3. API Functions
+    function loadProjectInfo(project_id) {
+        return new Promise((resolve, reject) => {
+            $.getJSON(`/get/projects/${project_id}`, function (project) {
+                // Set the value of the project name input directly
+                $('#projectName').val(project.fieldValueMap.name);
+                
+                // Resolve with the project data
+                resolve(project);
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+                console.error("Ошибка загрузки информации о проекте:", textStatus, errorThrown);
+                reject(errorThrown);
+            });
+        });
+    }
+
     function loadCustomersDropdown() {
         return new Promise((resolve, reject) => {
             $.getJSON('/get/customers', function (customers) {
@@ -354,7 +369,25 @@ $(document).ready(function () {
         updateDeleteButtonState();
     }
 
-    // 4. Table Initialization
+
+    // 4. Initialization
+
+    //4.1 Load project info if needed
+    if (PROJECT_ID) {
+        loadProjectInfo(PROJECT_ID)
+            .then(project => {
+                // Enable the create button if needed
+                if (project.fieldValueMap.name) {
+                    $('#createProjectBtn').prop('disabled', false);
+                    updateCreateButtonTooltip();
+                }
+            })
+            .catch(error => {
+                showAlert("Не удалось загрузить информацию о проекте", "danger");
+            });
+    }
+
+    //4.2 Table Initialize
     initializeTable();
 
     // 5. Event Handlers

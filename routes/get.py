@@ -71,9 +71,7 @@ def get_projects(token):
 @require_token
 def get_project_info(token, project_id):
 
-    query_filter = f"item => item.GetValueAsBool(\"is_created_by_generator\") == True" # Фильтр по флагу
-
-    project_data = vc.get_mp_item(token, project_id, query=query_filter) # Используем get_mp_item для получения данных ОДНОГО проекта по ID
+    project_data = vc.get_mp_item(token, project_id) # Используем get_mp_item для получения данных ОДНОГО проекта по ID
 
     if project_data is None:
         return jsonify({"error": "Не удалось получить данные проекта из Vitro-CAD MP"}), 500

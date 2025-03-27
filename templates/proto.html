@@ -3,11 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <base href="{{ url_for('index', _external=True) }}">
     <title>Генератор Проектов</title>
-    <!-- Bootstrap 4 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-    <!-- DataTables Bootstrap 4 CSS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/select/1.7.0/css/select.bootstrap4.min.css">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
@@ -19,11 +16,7 @@
         </div>
         <div class="form-group">
             <label for="projectName">Название проекта:</label>
-            <input class="form-control form-control-sm" type="text" id="projectName" name="projectName" required>
-            <label for="projectId">ID проекта:</label>
-            <select class="form-control" id="projectId" disabled>
-                <option value="{{ project_id }}">{{ project_id }}</option>
-            </select>
+            <input class="form-control" type="text" id="projectName" name="projectName" disabled>
         </div>
         <div class="btn-toolbar mb-3 d-flex justify-content-between">
             <div class="btn-group">
@@ -89,7 +82,6 @@
                         <div class="form-group">
                             <div class="dropdown">
                                 <label for="markDropdown">Выберите марки:</label>
-                                <!-- <select id="markDropdown" class="form-control" multiple></select> -->
                                 <select id="markDropdown" class="form-control"></select>
                             </div>
                             <label for="markNumberDropdown">Номер раздела:</label>
@@ -163,8 +155,7 @@
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
     <script src="https://cdn.datatables.net/select/1.7.0/js/dataTables.select.min.js"></script>
-    <script>const APP_CONFIG = {PREFIX: "{{ app_prefix }}"};</script>
-    <script src="{{ url_for('static', filename='app-utils.js') }}"></script>
+    <script>const APP_CONFIG = {PREFIX: "{{ app_prefix }}"}; const PROJECT_ID = "{{project_id}}"</script>
     <script src="{{ url_for('static', filename='proto.js') }}"></script>
 </body>
 </html>
