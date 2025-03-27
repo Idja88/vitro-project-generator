@@ -252,13 +252,12 @@ $(document).ready(function () {
     }
 
     // 3. API Functions
+
+    // Load project info by ID
     function loadProjectInfo(project_id) {
         return new Promise((resolve, reject) => {
             $.getJSON(`/get/projects/${project_id}`, function (project) {
-                // Set the value of the project name input directly
                 $('#projectName').val(project.fieldValueMap.name);
-                
-                // Resolve with the project data
                 resolve(project);
             }).fail(function (jqXHR, textStatus, errorThrown) {
                 console.error("Ошибка загрузки информации о проекте:", textStatus, errorThrown);
@@ -267,6 +266,7 @@ $(document).ready(function () {
         });
     }
 
+    // Load customers
     function loadCustomersDropdown() {
         return new Promise((resolve, reject) => {
             $.getJSON('/get/customers', function (customers) {
@@ -288,6 +288,7 @@ $(document).ready(function () {
         });
     }
 
+    // Load objects by customer ID
     function loadObjectsDropdown(customerId) {
         return new Promise((resolve, reject) => {
             $.getJSON(`/get/objects/${customerId}`, function (objectsData) {
@@ -315,6 +316,7 @@ $(document).ready(function () {
         });
     }
 
+    // Load marks
     function loadMarksDropdown() {
         return new Promise((resolve, reject) => {
             $.getJSON('/get/marks', function (marksData) {
@@ -337,6 +339,63 @@ $(document).ready(function () {
         });
     }
 
+    // Update project info
+    function updateProjectInfo(projectId, projectName, selectionMatrix) {
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                url: `/set/update/${projectId}`,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    projectName: projectName,
+                    selectionMatrix: selectionMatrix 
+                }),
+                success: function(response) {
+                    console.log('Информация о проекте успешно обновлена:', response);
+                    resolve(response);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Ошибка при обновлении информации о проекте:', xhr.responseJSON || error);
+                    reject({
+                        stage: 'update',
+                        status: status,
+                        message: xhr.responseJSON?.error || 'Ошибка обновления данных проекта',
+                        details: xhr.responseText
+                    });
+                }
+            });
+        });
+    }
+
+    //Create project structure
+    function createProjectStructure(projectId, projectName, selectionMatrix) {
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                url: `/set/create/${projectId}`,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    projectName: projectName,
+                    selectionMatrix: selectionMatrix 
+                }),
+                success: function(response) {
+                    console.log('Структура проекта успешно создана:', response);
+                    resolve(response);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Ошибка при создании структуры проекта:', xhr.responseJSON || error);
+                    reject({
+                        stage: 'create',
+                        status: status,
+                        message: xhr.responseJSON?.error || 'Ошибка создания структуры проекта',
+                        details: xhr.responseText
+                    });
+                }
+            });
+        });
+    }
+
+    // 4. Initialization
     function initializeTable() {
         // Destroy existing table if it exists
         if ($.fn.DataTable.isDataTable('#selectionMatrix')) {
@@ -368,9 +427,6 @@ $(document).ready(function () {
         // Reset button states
         updateDeleteButtonState();
     }
-
-
-    // 4. Initialization
 
     //4.1 Load project info if needed
     if (PROJECT_ID) {
@@ -727,27 +783,33 @@ $(document).ready(function () {
             return;
         }
 
-        $.ajax({
-            url: '/set/create', // URL для создания проекта на backend
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ projectName: projectName, selectionMatrix: selectionMatrixActual }),
-            success: function (response) {
+        // Блокировка кнопки на время выполнения операции
+        $('#createProjectBtn').prop('disabled', true).text('Создание...');
+        
+        // 1. Обновление информации о проекте в списке проектов
+        updateProjectInfo(PROJECT_ID, projectName, selectionMatrixActual)
+            .then(response => {
+                // 2. Создание структуры проекта в списке хранилища файлов
+                return createProjectStructure(PROJECT_ID, projectName, selectionMatrixActual);
+            })
+            .then(response => {
                 // Очищаем поля ввода
-                $('#projectName').val('');
-                $('#createProjectBtn').prop('disabled', true);
+                $('#createProjectBtn').prop('disabled', true).text('Создать проект');
 
                 // Reinitialize table to fresh state
                 initializeTable();
                 
                 // Show success alert
-                showAlert(`Проект "${projectName}" успешно создан! ID: ${response.projectId}`, 'success');
-            },
-            error: function (error) {
+                showAlert(`Проект "${projectName}" успешно создан! ID: ${PROJECT_ID}`, 'success');
+            })
+            .catch(error => {
+                // Восстанавливаем кнопку
+                $('#createProjectBtn').prop('disabled', false).text('Создать проект');
+                
                 // Show error alert
-                showAlert(`Ошибка при создании проекта: ${error.responseJSON?.error || 'Неизвестная ошибка'}`, 'danger');
-            }
-        });
+                showAlert(`Ошибка при создании проекта: ${error.message || 'Неизвестная ошибка'}`, 'danger');
+                console.error('Детали ошибки:', error);
+            });
     });
 
     // Initialize tooltips
