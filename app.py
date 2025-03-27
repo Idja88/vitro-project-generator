@@ -1,11 +1,11 @@
 from flask import Flask, render_template
 from werkzeug.middleware.proxy_fix import ProxyFix
-from config import Config, configure_app
+from config import configure_app
 from routes import set, get, callback
 import os
 from prefix_middleware import PrefixMiddleware
 
-def create_app(config_class=Config):
+def create_app():
     # Инициализация приложения
     app = Flask(__name__)
     
@@ -57,5 +57,5 @@ def create_app(config_class=Config):
     return app
 
 if __name__ == '__main__':
-    app = create_app()
-    app.run(host='0.0.0.0', port=5000, debug=app.config.get('DEBUG', False))
+    application = create_app()
+    application.run(host='0.0.0.0', port=5000, debug=application.config.get('DEBUG', False))
