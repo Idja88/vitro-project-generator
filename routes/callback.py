@@ -12,7 +12,7 @@ def vitro_cad_callback():
         if not auth_header:
             return jsonify({"exception": {"message": "Отсутствует заголовок Authorization"}}), 401
 
-        token = auth_header.split(' ')[1]
+        token = auth_header
 
         # Validate request data
         data = request.get_json()
