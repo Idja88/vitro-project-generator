@@ -1,6 +1,7 @@
 $(document).ready(function () {
     // 1. Global Variables
     var dataTable;
+    var projects = [];
     var objects = [];
     var marks = [];
     var selectedRows = [];
@@ -258,6 +259,7 @@ $(document).ready(function () {
         return new Promise((resolve, reject) => {
             $.getJSON(`/get/projects/${project_id}`, function (project) {
                 $('#projectName').val(project.fieldValueMap.name);
+                projects = project; // Сохраняем для дальнейшего использования
                 resolve(project);
             }).fail(function (jqXHR, textStatus, errorThrown) {
                 console.error("Ошибка загрузки информации о проекте:", textStatus, errorThrown);
