@@ -42,17 +42,9 @@ def create_app():
     def index():
         return render_template('index.html')
 
-    @app.route('/create')
-    def create_project_page():
-        return render_template('create.html')
-
-    @app.route('/edit')
-    def edit_project_page():
-        return render_template('edit.html')
-
-    @app.route('/proto/<project_id>')
-    def edit_project_page_proto(project_id):
-        return render_template('proto.html', project_id=project_id)
+    @app.route('/create/<project_id>')
+    def create_project_page(project_id):
+        return render_template('create.html', project_id=project_id)
 
     return app
 
