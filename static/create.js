@@ -255,9 +255,9 @@ $(document).ready(function () {
     // 3. API Functions
 
     // Load project info by ID
-    function loadProjectInfo(project_id) {
+    function loadProjectInfo(projectId) {
         return new Promise((resolve, reject) => {
-            $.getJSON(`/get/projects/${project_id}`, function (project) {
+            $.getJSON(`/get/projects/${projectId}`, function (project) {
                 $('#projectName').val(project.fieldValueMap.name);
                 projects = project; // Сохраняем для дальнейшего использования
                 resolve(project);
@@ -269,9 +269,9 @@ $(document).ready(function () {
     }
 
     // Load customers
-    function loadCustomersDropdown() {
+    function loadCustomersDropdown(companyId) {
         return new Promise((resolve, reject) => {
-            $.getJSON('/get/customers', function (customers) {
+            $.getJSON(`/get/customers/${companyId}`, function (customers) {
                 var dropdown = $('#customerDropdown');
                 dropdown.empty();
                 dropdown.append($('<option value="">Выберите заказчика</option>'));
@@ -467,7 +467,7 @@ $(document).ready(function () {
                 .prop('disabled', true);
             $('#addRowConfirm').prop('disabled', true);
             
-            loadCustomersDropdown()
+            loadCustomersDropdown(projects.fieldValueMap.project_company_id)
                 .then(() => {
                     $('#customerDropdown').prop('disabled', false);
                     $('#objectDropdown')

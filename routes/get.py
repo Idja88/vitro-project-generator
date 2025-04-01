@@ -5,14 +5,14 @@ from decorators import require_token
 bp = Blueprint('get', __name__, url_prefix='/get')
 
 # Получает список заказчиков
-@bp.route('/customers', methods=['GET'])
+@bp.route('/customers/<company_id>', methods=['GET'])
 @require_token
-def get_customers(token):
+def get_customers(token, company_id):
 
     parent_id = current_app.config['OBJECT_LIST_ID'] # ID родительского списка "Объекты Проектирования"
     customer_ct_id = current_app.config['CUSTOMER_CT_ID'] # content_type_id для папок Заказчиков
 
-    query_filter = f"item => item.ContentTypeId == Guid(\"{customer_ct_id}\")" # Фильтр по content_type_id
+    query_filter = f"item => item.ContentTypeId == Guid(\"{customer_ct_id}\") && item.GetLookupId(\"company_customer_lookup\") == Guid(\"{company_id}\")" # Фильтр по content_type_id и company_id
 
     customer_data = vc.get_mp_children(token, parent_id, recursive=True, query=query_filter) # Используем get_mp_children с фильтром
 
