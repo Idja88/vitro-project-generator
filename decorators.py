@@ -6,13 +6,16 @@ def require_token(f):
     def decorated(*args, **kwargs):
         token = None
         
-        # Пытаемся получить токен из cookie
+        # Пытаемся получить токен из cookie, который мы установили в callback
         token = request.cookies.get('mp_token')
         
-        # Если токен не найден в cookie, проверяем заголовки
+        # Проверяем cookie, который устанавливает основное приложение Vitro-CAD MP
         if not token:
-            if 'Authorization' in request.headers:
-                token = request.headers['Authorization']
+            token = request.cookies.get('Authorization')
+
+        # Если токен не найден в cookie, проверяем кофинфигурацию, используем для тестов
+        if not token:
+            token = current_app.config['VITRO_CAD_AUTH_TOKEN']
         
         if not token:
             current_app.logger.error("Token is missing")
