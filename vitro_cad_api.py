@@ -60,7 +60,6 @@ def get_mp_children(mp_token, parent_id, recursive=False, query=None):
     url_string = f"{mp_url}/api/item/{endpoint}/{parent_id}"
     headers = {'Authorization': mp_token}
     payload = {"query": query} if query else None
-
     try:
         with requests.post(url=url_string, headers=headers, json=payload) as response:
             response.raise_for_status()
