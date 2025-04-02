@@ -370,16 +370,13 @@ $(document).ready(function () {
     }
 
     //Create project structure
-    function createProjectStructure(projectId, projectName, selectionMatrix) {
+    function createProjectStructure(projectUpdatedData) {
         return new Promise((resolve, reject) => {
             $.ajax({
-                url: `/set/create/${projectId}`,
+                url: `/set/create/${projectUpdatedData[0].id}`,
                 type: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify({
-                    projectName: projectName,
-                    selectionMatrix: selectionMatrix 
-                }),
+                data: JSON.stringify(projectUpdatedData),
                 success: function(response) {
                     console.log('Структура проекта успешно создана:', response);
                     resolve(response);
@@ -776,7 +773,7 @@ $(document).ready(function () {
 
     // 5.8 Create Project Handler
     $('#createProjectBtn').on('click', function() {
-        var projectName = $('#projectName').val();
+        //var projectName = $('#projectName').val();
         var selectionMatrixActual = getSelectionMatrix();
 
         // Проверка на пустой выбор
@@ -789,10 +786,10 @@ $(document).ready(function () {
         $('#createProjectBtn').prop('disabled', true).text('Создание...');
         
         // 1. Обновление информации о проекте в списке проектов
-        updateProjectInfo(PROJECT_ID, projectName, selectionMatrixActual)
+        updateProjectInfo(projects.id, projects.fieldValueMap.name, selectionMatrixActual)
             .then(response => {
                 // 2. Создание структуры проекта в списке хранилища файлов
-                return createProjectStructure(PROJECT_ID, projectName, selectionMatrixActual);
+                return createProjectStructure(response);
             })
             .then(response => {
                 // Очищаем поля ввода
@@ -802,7 +799,7 @@ $(document).ready(function () {
                 initializeTable();
                 
                 // Show success alert
-                showAlert(`Проект "${projectName}" успешно создан! ID: ${PROJECT_ID}`, 'success');
+                showAlert(`Проект "${response[0].fieldValueMap.name}" успешно создан! ID: ${response[0].id}`, 'success');
             })
             .catch(error => {
                 // Восстанавливаем кнопку
