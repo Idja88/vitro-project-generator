@@ -537,7 +537,15 @@ $(document).ready(function () {
         if (selectedObjectOptions.length > 0) {
             var checkboxStates = getCheckboxStates();
             var currentData = dataTable.data().toArray();
-            var currentColumns = dataTable.settings()[0].aoColumns;
+            
+            var currentColumns = dataTable.settings()[0].aoColumns.map(function(col) {
+                return {
+                    title: col.sTitle,
+                    className: col.sClass,
+                    width: col.sWidth
+                };
+            });
+            
             var duplicatesFound = false;
 
             selectedObjectOptions.each(function() {
