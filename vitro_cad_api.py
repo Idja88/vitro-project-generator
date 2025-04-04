@@ -68,3 +68,14 @@ def get_mp_children(mp_token, parent_id, recursive=False, query=None):
     except requests.exceptions.RequestException as e:
         print(f"Error getting MP children (parent_id: {parent_id}, recursive: {recursive}): {e}")
         return None
+    
+def copy_mp_item(mp_token, to_item_id, data):
+    mp_url = current_app.config['VITRO_CAD_API_BASE_URL']
+    url_string = f"{mp_url}/api/item/copy/{to_item_id}"
+    headers = {'Authorization': mp_token}
+    try:
+        with requests.post(url=url_string, headers=headers, json=data) as response:
+            response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print(f"Error copying MP item (item_id: {to_item_id}): {e}")
+        return None
