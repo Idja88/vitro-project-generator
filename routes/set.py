@@ -52,6 +52,17 @@ def create_new_project(token, project_id):
     if isinstance(project_data[0]['fieldValueMap']['selection_matrix'], str):
        selection_matrix = json.loads(project_data[0]['fieldValueMap']['selection_matrix'])
     
+    mark_template_children = vc.get_mp_children(token, current_app.config['MARK_TEMPLATE_FOLDER_ID'], recursive=False)
+
+    mark_template_income_data = []
+    if mark_template_children:
+        for child in mark_template_children:
+            child_template_income_data = {
+                "id": child['id'],
+                "isChildListCopyRequired": True
+            }
+            mark_template_income_data.append(child_template_income_data)
+
     for object_folder in selection_matrix['objects']:
 
         if object_folder['id'] == '00000000-0000-0000-0000-000000000000':
@@ -74,6 +85,8 @@ def create_new_project(token, project_id):
 
                 if not mark_data:
                     return jsonify({"error": "Не удалось создать марку проекта"}), 500
+
+                mark_template_data = vc.copy_mp_item(token, mark_data[0]['id'], mark_template_income_data)
         else:
 
             object_folder_income_data = [{
@@ -107,5 +120,7 @@ def create_new_project(token, project_id):
 
                 if not mark_data:
                     return jsonify({"error": "Не удалось создать марку проекта"}), 500
+                
+                mark_template_data = vc.copy_mp_item(token, mark_data[0]['id'], mark_template_income_data)
 
     return jsonify(project_folder_data), 201 # Возвращаем ID нового проекта

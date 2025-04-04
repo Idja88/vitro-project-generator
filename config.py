@@ -27,6 +27,8 @@ class Config:
     OBJECT_FOLDER_CT_ID = os.getenv("OBJECT_FOLDER_CT_ID")
     MARK_FOLDER_CT_ID = os.getenv("MARK_FOLDER_CT_ID")
 
+    MARK_TEMPLATE_FOLDER_ID = os.getenv("MARK_TEMPLATE_FOLDER_ID")
+
 # Конфигурация для development
 class DevelopmentConfig(Config):
     DEBUG = True
