@@ -75,7 +75,7 @@ def create_new_project(token, project_id):
     
     project_template_data = vc.copy_mp_item(token, project_folder_data[0]['id'], project_template_income_data)
 
-    project_anchor_data = vc.get_mp_children(token, project_folder_data[0]['id'], recursive=True, query="item => item.GetValueAsString(\"name\")  == \"03_СОД\"")
+    project_anchor_data = vc.get_mp_children(token, project_folder_data[0]['id'], recursive=True, query=f"item => item.GetValueAsString(\"name\")  == \"{current_app.config['PROJECT_TEMPLATE_ANCHOR_NAME']}\"")
     
     for object_folder in selection_matrix['objects']:
 

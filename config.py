@@ -29,6 +29,7 @@ class Config:
 
     MARK_TEMPLATE_FOLDER_ID = os.getenv("MARK_TEMPLATE_FOLDER_ID")
     PROJECT_TEMPLATE_FOLDER_ID = os.getenv("PROJECT_TEMPLATE_FOLDER_ID")
+    PROJECT_TEMPLATE_ANCHOR_NAME = os.getenv("PROJECT_TEMPLATE_ANCHOR_NAME")
 
 # Конфигурация для development
 class DevelopmentConfig(Config):
