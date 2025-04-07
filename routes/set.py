@@ -52,7 +52,17 @@ def create_new_project(token, project_id):
     if isinstance(project_data[0]['fieldValueMap']['selection_matrix'], str):
        selection_matrix = json.loads(project_data[0]['fieldValueMap']['selection_matrix'])
     
+    project_template_income_data = vc.get_mp_children(token, current_app.config['PROJECT_TEMPLATE_FOLDER_ID'], recursive=False)
     mark_template_children = vc.get_mp_children(token, current_app.config['MARK_TEMPLATE_FOLDER_ID'], recursive=False)
+
+    project_template_income_data = []
+    if project_template_income_data:
+        for template in project_template_income_data:
+            template_income_data = {
+                "id": template['id'],
+                "isChildListCopyRequired": True
+            }
+            project_template_income_data.append(template_income_data)
 
     mark_template_income_data = []
     if mark_template_children:
@@ -62,11 +72,15 @@ def create_new_project(token, project_id):
                 "isChildListCopyRequired": True
             }
             mark_template_income_data.append(child_template_income_data)
+    
+    project_template_data = vc.copy_mp_item(token, project_folder_data[0]['id'], project_template_income_data)
 
+    project_anchor_data = vc.get_mp_children(token, project_folder_data[0]['id'], recursive=True, query="item => item.GetValueAsString(\"name\")  == \"03_СОД\"")
+    
     for object_folder in selection_matrix['objects']:
 
         if object_folder['id'] == '00000000-0000-0000-0000-000000000000':
-            # Для специального объекта создаем марки напрямую внутри папки проекта
+            # Для специального объекта создаем марки на его уровне
             for mark_folder in object_folder['marks']:
 
                 if mark_folder['number'] == '':
@@ -74,7 +88,7 @@ def create_new_project(token, project_id):
 
                 mark_folder_income_data = [{
                     "list_id": current_app.config['DOCUMENT_LIST_ID'],
-                    "parent_id": project_folder_data[0]['id'],  # Используем папку проекта как родительскую
+                    "parent_id": project_folder_data[0]['id'] if not project_anchor_data else project_anchor_data[0]['id'],
                     "content_type_id": current_app.config['MARK_FOLDER_CT_ID'],
                     "name": mark_folder['name'],
                     "sheet_set_lookup": mark_folder['id'],
@@ -91,7 +105,7 @@ def create_new_project(token, project_id):
 
             object_folder_income_data = [{
             "list_id" : current_app.config['DOCUMENT_LIST_ID'],
-            "parent_id": project_folder_data[0]['id'],
+            "parent_id": project_folder_data[0]['id'] if not project_anchor_data else project_anchor_data[0]['id'],
             "content_type_id" : current_app.config['OBJECT_FOLDER_CT_ID'],
             "name": object_folder['name'],
             "object_list_lookup": object_folder['id']
