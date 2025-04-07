@@ -52,17 +52,17 @@ def create_new_project(token, project_id):
     if isinstance(project_data[0]['fieldValueMap']['selection_matrix'], str):
        selection_matrix = json.loads(project_data[0]['fieldValueMap']['selection_matrix'])
     
-    project_template_income_data = vc.get_mp_children(token, current_app.config['PROJECT_TEMPLATE_FOLDER_ID'], recursive=False)
+    project_template_children = vc.get_mp_children(token, current_app.config['PROJECT_TEMPLATE_FOLDER_ID'], recursive=False)
     mark_template_children = vc.get_mp_children(token, current_app.config['MARK_TEMPLATE_FOLDER_ID'], recursive=False)
 
     project_template_income_data = []
-    if project_template_income_data:
-        for template in project_template_income_data:
-            template_income_data = {
+    if project_template_children:
+        for template in project_template_children:
+            child_template_income_data = {
                 "id": template['id'],
                 "isChildListCopyRequired": True
             }
-            project_template_income_data.append(template_income_data)
+            project_template_income_data.append(child_template_income_data)
 
     mark_template_income_data = []
     if mark_template_children:
