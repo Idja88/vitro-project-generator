@@ -3,7 +3,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from config import configure_app
 from routes import set, get, callback
 import os
-from prefix_middleware import PrefixMiddleware
+from middleware import PrefixMiddleware
 
 def create_app():
     # Инициализация приложения
