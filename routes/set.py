@@ -30,17 +30,20 @@ def update_existing_project(token, project_id):
 
     return jsonify(project_updated_data), 201 # Возвращаем ID нового проекта
 
-# Создаем структуру проекта
-@bp.route('/create/<project_id>', methods=['POST'])
-@require_token
-def create_new_project(token, project_id):
-    project_data = request.get_json() # Получаем JSON из тела запроса
+# Создание папки проекта
+def create_project_folder(token, parent_id, project_data):
+    """Создает папку проекта"""
+
+    project_name = project_data[0]['fieldValueMap']['name']
+    project_id = project_data[0]['id']
+    if parent_id is None:
+        parent_id = current_app.config['DOCUMENT_LIST_ID']
 
     project_folder_income_data = [{
         "list_id" : current_app.config['DOCUMENT_LIST_ID'],
-        "parent_id": current_app.config['DOCUMENT_LIST_ID'],
+        "parent_id": parent_id,
         "content_type_id" : current_app.config['PROJECT_FOLDER_CT_ID'],
-        "name": project_data[0]['fieldValueMap']['name'],
+        "name": project_name,
         "project_list_lookup": project_id
     }]
 
@@ -48,93 +51,116 @@ def create_new_project(token, project_id):
 
     if not project_folder_data:
         return jsonify({"error": "Не удалось создать папку проекта"}), 500
-    
-    if isinstance(project_data[0]['fieldValueMap']['selection_matrix'], str):
-       selection_matrix = json.loads(project_data[0]['fieldValueMap']['selection_matrix'])
-    
-    project_template_children = vc.get_mp_children(token, current_app.config['PROJECT_TEMPLATE_FOLDER_ID'], recursive=False)
-    mark_template_children = vc.get_mp_children(token, current_app.config['MARK_TEMPLATE_FOLDER_ID'], recursive=False)
 
-    project_template_income_data = []
-    if project_template_children:
-        for template in project_template_children:
-            child_template_income_data = {
-                "id": template['id'],
-                "isChildListCopyRequired": True
-            }
-            project_template_income_data.append(child_template_income_data)
+    return project_folder_data
 
-    mark_template_income_data = []
-    if mark_template_children:
-        for child in mark_template_children:
+# Создание папки объекта
+def create_object_folder(token, parent_id, object_data):
+    """Создает папку объекта"""
+
+    object_name = object_data['name']
+    object_id = object_data['id']
+
+    object_folder_income_data = [{
+        "list_id": current_app.config['DOCUMENT_LIST_ID'],
+        "parent_id": parent_id,
+        "content_type_id": current_app.config['OBJECT_FOLDER_CT_ID'],
+        "name": object_name,
+        "object_list_lookup": object_id
+    }]
+    
+    object_folder_data = vc.update_mp_list(token, object_folder_income_data)
+
+    if not object_folder_data:
+        return jsonify({"error": "Не удалось создать папку объекта"}), 500
+    
+    return object_folder_data
+
+# Создание папки марки
+def create_mark_folder(token, parent_id, mark_data):
+    """Создает папку марки"""
+
+    mark_name = mark_data['name']
+    mark_id = mark_data['id']
+    mark_number = None if mark_data['number'] == '' else mark_data['number']
+    
+    mark_folder_income_data = [{
+        "list_id": current_app.config['DOCUMENT_LIST_ID'],
+        "parent_id": parent_id,
+        "content_type_id": current_app.config['MARK_FOLDER_CT_ID'],
+        "name": mark_name,
+        "sheet_set_lookup": mark_id,
+        "sheet_set_number": mark_number
+    }]
+
+    mark_folder_data = vc.update_mp_list(token, mark_folder_income_data)
+    
+    if not mark_folder_data:
+        return jsonify({"error": "Не удалось создать марку проекта"}), 500
+    
+    return mark_folder_data
+
+# Подготовка данных шаблонов для копирования
+def prepare_template_data(token, template_folder_id):
+    """Получает данные о дочерних элементах шаблона и подготавливает их для копирования"""
+    template_children = vc.get_mp_children(token, template_folder_id, recursive=False)
+    
+    template_income_data = []
+    if template_children:
+        for child in template_children:
             child_template_income_data = {
                 "id": child['id'],
                 "isChildListCopyRequired": True
             }
-            mark_template_income_data.append(child_template_income_data)
+            template_income_data.append(child_template_income_data)
     
+    return template_income_data
+
+# Создаем структуру проекта
+@bp.route('/create/<project_id>', methods=['POST'])
+@require_token
+def create_new_project(token, project_id):
+    # Получаем JSON из тела запроса
+    project_data = request.get_json()
+
+    # Преобразуем строку в JSON, если это необходимо
+    if isinstance(project_data[0]['fieldValueMap']['selection_matrix'], str):
+       selection_matrix = json.loads(project_data[0]['fieldValueMap']['selection_matrix'])
+
+    # Подготавливаем данные шаблонов
+    project_template_income_data = prepare_template_data(token, current_app.config['PROJECT_TEMPLATE_FOLDER_ID'])
+    mark_template_income_data = prepare_template_data(token, current_app.config['MARK_TEMPLATE_FOLDER_ID'])
+
+    # Создаем папку проекта
+    project_folder_data = create_project_folder(token, parent_id=None, project_data=project_data)
+
+    # Копируем шаблоны проекта
     project_template_data = vc.copy_mp_item(token, project_folder_data[0]['id'], project_template_income_data)
 
-    project_anchor_data = vc.get_mp_children(token, project_folder_data[0]['id'], recursive=True, query=f"item => item.GetValueAsString(\"name\")  == \"{current_app.config['PROJECT_TEMPLATE_ANCHOR_NAME']}\"")
-    
+    # Находим якорь в структуре проекта, если он есть
+    project_anchor_data = vc.get_mp_children(
+        token, 
+        project_folder_data[0]['id'], 
+        recursive=True, 
+        query=f"item => item.GetValueAsString(\"name\") == \"{current_app.config['PROJECT_TEMPLATE_ANCHOR_NAME']}\""
+    )
+
+    # Если якоря нет, используем папку проекта как родительскую
+    object_parent_id = project_anchor_data[0]['id'] if project_anchor_data else project_folder_data[0]['id']
+
+    # Проходим по объектам в матрице выбора
     for object_folder in selection_matrix['objects']:
-
         if object_folder['id'] == '00000000-0000-0000-0000-000000000000':
-            # Для специального объекта создаем марки на его уровне
-            for mark_folder in object_folder['marks']:
-
-                if mark_folder['number'] == '':
-                    mark_folder['number'] = None
-
-                mark_folder_income_data = [{
-                    "list_id": current_app.config['DOCUMENT_LIST_ID'],
-                    "parent_id": project_folder_data[0]['id'] if not project_anchor_data else project_anchor_data[0]['id'],
-                    "content_type_id": current_app.config['MARK_FOLDER_CT_ID'],
-                    "name": mark_folder['name'],
-                    "sheet_set_lookup": mark_folder['id'],
-                    "sheet_set_number": mark_folder['number']
-                }]
-
-                mark_data = vc.update_mp_list(token, mark_folder_income_data)
-
-                if not mark_data:
-                    return jsonify({"error": "Не удалось создать марку проекта"}), 500
-
-                mark_template_data = vc.copy_mp_item(token, mark_data[0]['id'], mark_template_income_data)
+            # Для специального объекта создаем марки напрямую
+            for mark_data in object_folder['marks']:
+                mark_folder_data = create_mark_folder(token, object_parent_id, mark_data)
+                mark_template_data = vc.copy_mp_item(token, mark_folder_data[0]['id'], mark_template_income_data)
         else:
-
-            object_folder_income_data = [{
-            "list_id" : current_app.config['DOCUMENT_LIST_ID'],
-            "parent_id": project_folder_data[0]['id'] if not project_anchor_data else project_anchor_data[0]['id'],
-            "content_type_id" : current_app.config['OBJECT_FOLDER_CT_ID'],
-            "name": object_folder['name'],
-            "object_list_lookup": object_folder['id']
-            }]
-        
-            object_data = vc.update_mp_list(token, object_folder_income_data)
-
-            if not object_data:
-                return jsonify({"error": "Не удалось создать объект проекта"}), 500
-
-            for mark_folder in object_folder['marks']:
-
-                if mark_folder['number'] == '':
-                    mark_folder['number'] = None
-
-                mark_folder_income_data = [{
-                    "list_id" : current_app.config['DOCUMENT_LIST_ID'],
-                    "parent_id": object_data[0]['id'],
-                    "content_type_id" : current_app.config['MARK_FOLDER_CT_ID'],
-                    "name": mark_folder['name'],
-                    "sheet_set_lookup": mark_folder['id'],
-                    "sheet_set_number": mark_folder['number']
-                }]
-
-                mark_data = vc.update_mp_list(token, mark_folder_income_data)
-
-                if not mark_data:
-                    return jsonify({"error": "Не удалось создать марку проекта"}), 500
-                
-                mark_template_data = vc.copy_mp_item(token, mark_data[0]['id'], mark_template_income_data)
-
+            # Для обычного объекта создаем папку объекта
+            object_folder_data = create_object_folder(token, object_parent_id, object_folder)
+            # И марки внутри него
+            for mark_data in object_folder['marks']:
+                mark_folder_data = create_mark_folder(token, object_folder_data[0]['id'], mark_data)
+                mark_template_data = vc.copy_mp_item(token, mark_folder_data[0]['id'], mark_template_income_data)
+    
     return jsonify(project_folder_data), 201 # Возвращаем ID нового проекта
