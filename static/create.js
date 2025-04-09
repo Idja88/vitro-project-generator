@@ -436,8 +436,22 @@ $(document).ready(function () {
     if (PROJECT_ID) {
         loadProjectInfo(PROJECT_ID)
             .then(project => {
+                // Check if project was already generated
+                if (project.fieldValueMap.is_created_by_generator === true) {
+                    // Disable all interactive elements
+                    $('#newRowButton, #newColumnButton, #deleteButton, #createProjectBtn').prop('disabled', true);
+                    
+                    // Disable the entire table
+                    $('#selectionMatrix').addClass('disabled-table');
+                    $('#selectionMatrix input').prop('disabled', true);
+                    
+                    // Show alert to user
+                    showAlert("Этот проект уже был создан с помощью генератора. Повторная генерация невозможна.", "warning");
+                    return; // Exit early
+                }
+
                 // Enable the create button if needed
-                if (project.fieldValueMap.name) {
+                if (project.fieldValueMap.is_created_by_generator === false) {
                     $('#createProjectBtn').prop('disabled', false);
                     updateCreateButtonTooltip();
                 }
