@@ -117,6 +117,12 @@ $(document).ready(function () {
             dom: '<"row"<"col-sm-12"tr>>',
             data: currentData,
             columns: currentColumns,
+            columnDefs: [
+                {
+                    targets: '_all',
+                    width: "100px",
+                }
+            ],
             language: {
                 emptyTable: "Нет данных в таблице"
             },
@@ -168,7 +174,7 @@ $(document).ready(function () {
             id: projectId,
             name: projectName,
             folder_structure_id: "",
-            objects: [] 
+            objects: []
         };
         var processedObjects = new Map();
     
@@ -400,14 +406,143 @@ $(document).ready(function () {
     }
 
     // 4. Initialization
-    function initializeTable() {
+    function initializeTable(selectionMatrix) {
         // Destroy existing table if it exists
         if ($.fn.DataTable.isDataTable('#selectionMatrix')) {
             dataTable.destroy();
             $('#selectionMatrix').empty();
         }
-    
-        // Initialize fresh table
+        
+        // Check if we have a saved selection matrix
+        if (selectionMatrix) {
+            try {
+                // Parse the selection matrix if it's a string
+                if (typeof selectionMatrix === 'string') {
+                    selectionMatrix = JSON.parse(selectionMatrix);
+                }
+
+                // Prepare columns for DataTable
+                let columns = [{
+                    title: 'Объект проектирования',
+                    className: 'dt-center select-cell',
+                    width: '200px'
+                }];
+                
+                // Map to track mark columns by ID
+                const markColumnsMap = new Map();
+                
+                // Process all objects and their marks to build unique mark columns
+                selectionMatrix.objects.forEach(obj => {
+                    obj.marks.forEach(mark => {
+                        const markKey = `${mark.id}_${mark.number || ''}`;
+                        if (!markColumnsMap.has(markKey)) {
+                            markColumnsMap.set(markKey, {
+                                id: mark.id,
+                                name: mark.name,
+                                number: mark.number || ''
+                            });
+                        }
+                    });
+                });
+                
+                // Add mark columns
+                markColumnsMap.forEach(mark => {
+                    columns.push({
+                        title: `<div data-mark-id="${mark.id}" data-mark-number="${mark.number}">${mark.name}${mark.number}</div>`,
+                        className: 'dt-center',
+                        defaultContent: '<div class="checkbox-container"><input type="checkbox" class="form-check-input"></div>'
+                    });
+                });
+                
+                // Prepare rows and track checkbox selections
+                let tableData = [];
+                let checkboxSelections = [];
+                
+                // Convert from column-based marks to row-based objects with columns for each mark
+                selectionMatrix.objects.forEach(obj => {
+                    // Create a row for each object
+                    let row = [
+                        `<div data-object-id="${obj.id}">${obj.name}</div>`
+                    ];
+                    
+                    // Pre-fill the row with empty checkboxes
+                    for (let i = 0; i < markColumnsMap.size; i++) {
+                        row.push('<div class="checkbox-container"><input type="checkbox" class="form-check-input"></div>');
+                    }
+                    
+                    tableData.push(row);
+                    
+                    // Track which checkboxes should be checked
+                    let rowSelections = Array(markColumnsMap.size).fill(false);
+                    
+                    // Mark checkboxes for associated marks
+                    obj.marks.forEach(mark => {
+                        const markKey = `${mark.id}_${mark.number || ''}`;
+                        // Find the column index for this mark
+                        let colIndex = -1;
+                        let i = 0;
+                        markColumnsMap.forEach((value, key) => {
+                            if (key === markKey) colIndex = i;
+                            i++;
+                        });
+                        
+                        if (colIndex !== -1) {
+                            rowSelections[colIndex] = true;
+                        }
+                    });
+                    
+                    checkboxSelections.push(rowSelections);
+                });
+                
+                // Initialize DataTable with prepared data
+                dataTable = $('#selectionMatrix').DataTable({
+                    ordering: false,
+                    dom: '<"row"<"col-sm-12"tr>>',
+                    language: {
+                        emptyTable: "Нет данных в таблице"
+                    },
+                    data: tableData,
+                    columns: columns,
+                    columnDefs: [
+                        {
+                            targets: '_all',
+                            width: "100px",
+                        }
+                    ],
+                    drawCallback: function() {
+                        // After table is drawn, check the appropriate checkboxes
+                        tableData.forEach((row, rowIdx) => {
+                            $('#selectionMatrix tbody tr').eq(rowIdx).find('td:not(:first-child)').each((colIdx, cell) => {
+                                if (checkboxSelections[rowIdx] && checkboxSelections[rowIdx][colIdx]) {
+                                    $(cell).find('input[type="checkbox"]').prop('checked', true);
+                                }
+                            });
+                        });
+                        
+                        // Reattach event handlers
+                        reattachEventHandlers();
+                    }
+                });
+            } catch (e) {
+                console.error("Error rebuilding table from selection matrix:", e);
+                // Fall back to empty table initialization
+                initializeEmptyTable();
+            }
+        } else {
+            // Initialize empty table if no selection matrix exists
+            initializeEmptyTable();
+        }
+        
+        // Reset global variables
+        selectedRows = [];
+        selectedColumns = [];
+        
+        // Reset button states
+        updateDeleteButtonState();
+    }
+
+    // Helper function for empty table initialization
+    function initializeEmptyTable() {
         dataTable = $('#selectionMatrix').DataTable({
             ordering: false,
             dom: '<"row"<"col-sm-12"tr>>',
@@ -416,21 +551,23 @@ $(document).ready(function () {
             },
             columns: [{
                 title: 'Объект проектирования',
+                className: 'dt-center select-cell',
                 width: '200px'
             }],
-            columnDefs: [{
-                targets: 0,
-                className: 'dt-center select-cell'
-            }]
+            columnDefs: [
+                {
+                targets: '_all',
+                width: "100px",
+                }
+            ],
+            drawCallback: function() {
+                reattachEventHandlers();
+            }
         });
-    
-        // Reset global variables
-        selectedRows = [];
-        selectedColumns = [];
-        
-        // Reset button states
-        updateDeleteButtonState();
     }
+
+    //4.2 Table Initialize
+    initializeEmptyTable();
 
     //4.1 Load project info if needed
     if (PROJECT_ID) {
@@ -447,21 +584,20 @@ $(document).ready(function () {
                     
                     // Show alert to user
                     showAlert("Этот проект уже был создан с помощью генератора. Повторная генерация невозможна.", "warning");
+                    
                     return; // Exit early
                 }
 
                 // Enable the create button if needed
                 if (project.fieldValueMap.is_created_by_generator === false) {
                     $('#createProjectBtn').prop('disabled', false);
+                    initializeTable(project.fieldValueMap.selection_matrix);
                 }
             })
             .catch(error => {
                 showAlert("Не удалось загрузить информацию о проекте", "danger");
             });
     }
-
-    //4.2 Table Initialize
-    initializeTable();
 
     // 5. Event Handlers
     // 5.1 Modal Open Handlers
@@ -806,7 +942,7 @@ $(document).ready(function () {
                 $('#createProjectBtn').prop('disabled', true).text('Создать проект');
 
                 // Reinitialize table to fresh state
-                initializeTable();
+                initializeEmptyTable();
                 
                 // Show success alert
                 showAlert(`Проект "${response[0].fieldValueMap.name}" успешно создан! ID: ${response[0].id}`, 'success');
