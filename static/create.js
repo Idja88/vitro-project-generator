@@ -375,13 +375,13 @@ $(document).ready(function () {
     }
 
     //Create project structure
-    function createProjectStructure(projectUpdatedData) {
+    function createProjectStructure(projectId, SelectionMatrix) {
         return new Promise((resolve, reject) => {
             $.ajax({
-                url: `/set/create/${projectUpdatedData[0].id}`,
+                url: `/set/create/${projectId}`,
                 type: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify(projectUpdatedData),
+                data: JSON.stringify(SelectionMatrix),
                 success: function(response) {
                     console.log('Структура проекта успешно создана:', response);
                     resolve(response);
@@ -798,12 +798,8 @@ $(document).ready(function () {
         // Блокировка кнопки на время выполнения операции
         $('#createProjectBtn').prop('disabled', true).text('Создание...');
         
-        // 1. Обновление информации о проекте в списке проектов
-        updateProjectInfo(projects.id, projects.fieldValueMap.name, selectionMatrixActual)
-            .then(response => {
-                // 2. Создание структуры проекта в списке хранилища файлов
-                return createProjectStructure(response);
-            })
+        // Создание структуры проекта в списке хранилища файлов
+        createProjectStructure(projects.id, selectionMatrixActual)
             .then(response => {
                 // Очищаем поля ввода
                 $('#createProjectBtn').prop('disabled', true).text('Создать проект');
