@@ -187,20 +187,22 @@ $(document).ready(function () {
             // Получаем ID и имя объекта из первой ячейки строки
             var $objectCell = $row.find('td:first-child div');
             var objectId = $objectCell.data('object-id');
-            var objectName = $objectCell.text();
+            var objectName = $objectCell.data('object-name');
+            var objectNumber = $objectCell.data('object-number');
     
             // Получаем ID и имя марки из заголовка столбца
             var colIndex = $col.index();
             var $markHeader = $('#selectionMatrix thead th').eq(colIndex).find('div');
             var markId = $markHeader.data('mark-id');
+            var markName = $markHeader.data('mark-name');
             var markNumber = $markHeader.data('mark-number');
-            var markName = $markHeader.text();
     
             // Создаем или обновляем запись объекта
             if (!processedObjects.has(objectId)) {
                 processedObjects.set(objectId, {
                     id: objectId,
                     name: objectName,
+                    number: objectNumber,
                     folder_structure_id: "",
                     marks: []
                 });
@@ -318,6 +320,7 @@ $(document).ready(function () {
                 $.each(objectsData, function (index, object) {
                     dropdown.append($('<option></option>')
                         .attr('value', object.id)
+                        .attr('object-number', object.fieldValueMap.object_plan_number)
                         .text(object.fieldValueMap.name));
                 });
                 resolve(objectsData);
@@ -448,7 +451,7 @@ $(document).ready(function () {
                 // Add mark columns
                 markColumnsMap.forEach(mark => {
                     columns.push({
-                        title: `<div data-mark-id="${mark.id}" data-mark-number="${mark.number}">${mark.name}${mark.number}</div>`,
+                        title: `<div data-mark-id="${mark.id}" data-mark-name="${mark.name}" data-mark-number="${mark.number}">${mark.name}${mark.number}</div>`,
                         className: 'dt-center',
                         defaultContent: '<div class="checkbox-container"><input type="checkbox" class="form-check-input"></div>'
                     });
@@ -462,7 +465,7 @@ $(document).ready(function () {
                 selectionMatrix.objects.forEach(obj => {
                     // Create a row for each object
                     let row = [
-                        `<div data-object-id="${obj.id}">${obj.name}</div>`
+                        `<div data-object-id="${obj.id}" data-object-name="${obj.name}" data-object-number="${obj.number}">${obj.name}</div>`
                     ];
                     
                     // Pre-fill the row with empty checkboxes
@@ -705,6 +708,7 @@ $(document).ready(function () {
             selectedObjectOptions.each(function() {
                 var objectId = $(this).val();
                 var objectName = $(this).text();
+                var objectNumber = $(this).attr('object-number') || '';
                 
                 // Check for duplicates
                 var isDuplicate = currentData.some(function(row) {
@@ -720,7 +724,7 @@ $(document).ready(function () {
                 }
 
                 var rowData = Array(currentColumns.length).fill('');
-                rowData[0] = `<div data-object-id="${objectId}">${objectName}</div>`;
+                rowData[0] = `<div data-object-id="${objectId}" data-object-name="${objectName}" data-object-number="${objectNumber}">${objectName}</div>`;
                 currentData.push(rowData);
             });
 
@@ -795,7 +799,7 @@ $(document).ready(function () {
                     var markNumber = markNumbers[0];
                     
                     currentColumns.push({
-                        title: `<div data-mark-id="${markId}" data-mark-number="${markNumber}">${markName}${markNumber}</div>`,
+                        title: `<div data-mark-id="${markId}" data-mark-name="${markName}" data-mark-number="${markNumber}">${markName}${markNumber}</div>`,
                         className: 'dt-center',
                         defaultContent: '<div class="checkbox-container"><input type="checkbox" class="form-check-input"></div>'
                     });
