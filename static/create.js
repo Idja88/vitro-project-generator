@@ -163,8 +163,13 @@ $(document).ready(function () {
         return dataTable;
     }
 
-    function getSelectionMatrix() {
-        var selectionMatrix = { objects: [] };
+    function getSelectionMatrix(projectId, projectName) {
+        var selectionMatrix = { 
+            id: projectId,
+            name: projectName,
+            folder_structure_id: "",
+            objects: [] 
+        };
         var processedObjects = new Map();
     
         // Получаем все отмеченные чекбоксы
@@ -782,7 +787,7 @@ $(document).ready(function () {
     // 5.8 Create Project Handler
     $('#createProjectBtn').on('click', function() {
         //var projectName = $('#projectName').val();
-        var selectionMatrixActual = getSelectionMatrix();
+        var selectionMatrixActual = getSelectionMatrix(projects.id, projects.fieldValueMap.name);
 
         // Проверка на пустой выбор
         if (selectionMatrixActual.objects.length === 0) {
