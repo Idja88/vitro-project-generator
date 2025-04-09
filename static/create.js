@@ -453,7 +453,6 @@ $(document).ready(function () {
                 // Enable the create button if needed
                 if (project.fieldValueMap.is_created_by_generator === false) {
                     $('#createProjectBtn').prop('disabled', false);
-                    updateCreateButtonTooltip();
                 }
             })
             .catch(error => {
@@ -787,20 +786,8 @@ $(document).ready(function () {
         resetSelections();
     });
 
-    // 5.7 Обработчик события change для поля ввода проекта
-    $('#projectName').change(function() { 
-        var projectName = $(this).val();
-        if (projectName) { 
-            $('#createProjectBtn').prop('disabled', false); // Включаем кнопку
-        } else {
-            $('#createProjectBtn').prop('disabled', true);  // Иначе, выключаем кнопку, если заказчик не выбран
-        }
-        updateCreateButtonTooltip();
-    });
-
     // 5.8 Create Project Handler
     $('#createProjectBtn').on('click', function() {
-        //var projectName = $('#projectName').val();
         var selectionMatrixActual = getSelectionMatrix(projects.id, projects.fieldValueMap.name);
 
         // Проверка на пустой выбор
@@ -834,19 +821,4 @@ $(document).ready(function () {
             });
     });
 
-    // Initialize tooltips
-    $('[data-toggle="tooltip"]').tooltip();
-
-    // Update tooltip based on button state
-    function updateCreateButtonTooltip() {
-        const $btn = $('#createProjectBtn');
-        if ($btn.prop('disabled')) {
-            $btn.tooltip('enable');
-        } else {
-            $btn.tooltip('disable');
-        }
-    }
-
-    // Initial tooltip state
-    updateCreateButtonTooltip();
 });
