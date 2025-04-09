@@ -163,7 +163,7 @@ def create_new_project(token, project_id):
                 object_folder_data = create_object_folder(token, object_parent_id, object_folder)
                 selection_matrix['objects'][object_index]['folder_structure_id'] = object_folder_data[0]['id']
                 # И марки внутри него
-                for mark_data in object_folder['marks']:
+                for mark_index, mark_data in enumerate(object_folder['marks']):
                     mark_folder_data = create_mark_folder(token, object_folder_data[0]['id'], mark_data)
                     #копируем шаблон марки в папку марки
                     mark_template_data = vc.copy_mp_item(token, mark_folder_data[0]['id'], mark_template_income_data)
