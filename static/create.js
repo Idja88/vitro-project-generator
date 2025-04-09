@@ -569,32 +569,21 @@ $(document).ready(function () {
         });
     }
 
-    //4.2 Table Initialize
-    initializeEmptyTable();
-
-    //4.1 Load project info if needed
+    //4. Initialization of table data and project info
     if (PROJECT_ID) {
         loadProjectInfo(PROJECT_ID)
             .then(project => {
                 // Check if project was already generated
                 if (project.fieldValueMap.is_created_by_generator === true) {
-                    // Disable all interactive elements
-                    $('#newRowButton, #newColumnButton, #deleteButton, #createProjectBtn').prop('disabled', true);
-                    
-                    // Disable the entire table
-                    $('#selectionMatrix').addClass('disabled-table');
-                    $('#selectionMatrix input').prop('disabled', true);
-                    
-                    // Show alert to user
-                    showAlert("Этот проект уже был создан с помощью генератора. Повторная генерация невозможна.", "warning");
-                    
-                    return; // Exit early
+                    $('#createProjectBtn').prop('disabled', false);
+                    initializeEmptyTable();
+                    initializeTable(project.fieldValueMap.selection_matrix);
                 }
 
-                // Enable the create button if needed
+                // If not genereated, initialize empty table
                 if (project.fieldValueMap.is_created_by_generator === false) {
                     $('#createProjectBtn').prop('disabled', false);
-                    initializeTable(project.fieldValueMap.selection_matrix);
+                    initializeEmptyTable();
                 }
             })
             .catch(error => {
