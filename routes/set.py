@@ -6,20 +6,17 @@ from decorators import require_token
 bp = Blueprint('set', __name__, url_prefix='/set')
 
 # Обновляем инфомацию о проекте матрицей выбора
-@bp.route('/update/<project_id>', methods=['POST'])
-@require_token
-def update_existing_project(token, project_id):
-    project_data = request.get_json() # Получаем JSON из тела запроса
+def update_project_info(token, parent_id, project_data):
+    """Обновляет информацию о проекте в реестре"""
+    project_id = project_data['id']
+    project_name = project_data['name']
 
-    if not project_data or not project_data.get('projectName') or not project_data.get('selectionMatrix'):
-        return jsonify({"error": "Некорректные данные проекта"}), 400
-    
     project_income_data = [{
         "list_id" : current_app.config['PROJECT_LIST_ID'],
         "content_type_id" : current_app.config['PROJECT_CT_ID'],
         "id": project_id,
-        "name": project_data['projectName'],
-        "selection_matrix": project_data['selectionMatrix'],
+        "name": project_name,
+        "selection_matrix": project_data,
         "is_created_by_generator": True
     }]
 
@@ -33,9 +30,8 @@ def update_existing_project(token, project_id):
 # Создание папки проекта
 def create_project_folder(token, parent_id, project_data):
     """Создает папку проекта"""
-
-    project_name = project_data[0]['fieldValueMap']['name']
-    project_id = project_data[0]['id']
+    project_id = project_data['id']
+    project_name = project_data['name']
     if parent_id is None:
         parent_id = current_app.config['DOCUMENT_LIST_ID']
 
@@ -57,7 +53,6 @@ def create_project_folder(token, parent_id, project_data):
 # Создание папки объекта
 def create_object_folder(token, parent_id, object_data):
     """Создает папку объекта"""
-
     object_name = object_data['name']
     object_id = object_data['id']
 
@@ -79,7 +74,6 @@ def create_object_folder(token, parent_id, object_data):
 # Создание папки марки
 def create_mark_folder(token, parent_id, mark_data):
     """Создает папку марки"""
-
     mark_name = mark_data['name']
     mark_id = mark_data['id']
     mark_number = None if mark_data['number'] == '' else mark_data['number']
@@ -124,8 +118,10 @@ def create_new_project(token, project_id):
     project_data = request.get_json()
 
     # Преобразуем строку в JSON, если это необходимо
-    if isinstance(project_data[0]['fieldValueMap']['selection_matrix'], str):
-       selection_matrix = json.loads(project_data[0]['fieldValueMap']['selection_matrix'])
+    if isinstance(project_data, str):
+       selection_matrix = json.loads(project_data)
+    else:
+       selection_matrix = project_data
 
     try:
         # Подготавливаем данные шаблонов
@@ -180,13 +176,5 @@ def create_new_project(token, project_id):
         return jsonify({"error": "Не удалось создать структуру проекта"}), 500
     
     finally:
-        # Подготавливаем данные для обновления проекта
-        project_update_data = [{
-            "list_id": current_app.config['PROJECT_LIST_ID'],
-            "content_type_id": current_app.config['PROJECT_CT_ID'],
-            "id": project_id,
-            "selection_matrix": json.dumps(selection_matrix)
-        }]
-        
         # Обновляем информацию о проекте в реестре
-        vc.update_mp_list(token, project_update_data)
+        update_project_info(token, parent_id=None, project_data=selection_matrix)
