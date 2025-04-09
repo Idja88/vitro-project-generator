@@ -127,40 +127,66 @@ def create_new_project(token, project_id):
     if isinstance(project_data[0]['fieldValueMap']['selection_matrix'], str):
        selection_matrix = json.loads(project_data[0]['fieldValueMap']['selection_matrix'])
 
-    # Подготавливаем данные шаблонов
-    project_template_income_data = prepare_template_data(token, current_app.config['PROJECT_TEMPLATE_FOLDER_ID'])
-    mark_template_income_data = prepare_template_data(token, current_app.config['MARK_TEMPLATE_FOLDER_ID'])
+    try:
+        # Подготавливаем данные шаблонов
+        project_template_income_data = prepare_template_data(token, current_app.config['PROJECT_TEMPLATE_FOLDER_ID'])
+        mark_template_income_data = prepare_template_data(token, current_app.config['MARK_TEMPLATE_FOLDER_ID'])
 
-    # Создаем папку проекта
-    project_folder_data = create_project_folder(token, parent_id=None, project_data=project_data)
+        # Создаем папку проекта
+        project_folder_data = create_project_folder(token, parent_id=None, project_data=project_data)
 
-    # Копируем шаблоны проекта
-    project_template_data = vc.copy_mp_item(token, project_folder_data[0]['id'], project_template_income_data)
+        # Сохраняем ID папки проекта в selection_matrix
+        selection_matrix['folder_structure_id'] = project_folder_data[0]['id']
 
-    # Находим якорь в структуре проекта, если он есть
-    project_anchor_data = vc.get_mp_children(
-        token, 
-        project_folder_data[0]['id'], 
-        recursive=True, 
-        query=f"item => item.GetValueAsString(\"name\") == \"{current_app.config['PROJECT_TEMPLATE_ANCHOR_NAME']}\""
-    )
+        # Копируем шаблоны проекта
+        project_template_data = vc.copy_mp_item(token, project_folder_data[0]['id'], project_template_income_data)
 
-    # Если якоря нет, используем папку проекта как родительскую
-    object_parent_id = project_anchor_data[0]['id'] if project_anchor_data else project_folder_data[0]['id']
+        # Находим якорь в структуре проекта, если он есть
+        project_anchor_data = vc.get_mp_children(
+            token, 
+            project_folder_data[0]['id'], 
+            recursive=True, 
+            query=f"item => item.GetValueAsString(\"name\") == \"{current_app.config['PROJECT_TEMPLATE_ANCHOR_NAME']}\""
+        )
 
-    # Проходим по объектам в матрице выбора
-    for object_folder in selection_matrix['objects']:
-        if object_folder['id'] == '00000000-0000-0000-0000-000000000000':
-            # Для специального объекта создаем марки напрямую
-            for mark_data in object_folder['marks']:
-                mark_folder_data = create_mark_folder(token, object_parent_id, mark_data)
-                mark_template_data = vc.copy_mp_item(token, mark_folder_data[0]['id'], mark_template_income_data)
-        else:
-            # Для обычного объекта создаем папку объекта
-            object_folder_data = create_object_folder(token, object_parent_id, object_folder)
-            # И марки внутри него
-            for mark_data in object_folder['marks']:
-                mark_folder_data = create_mark_folder(token, object_folder_data[0]['id'], mark_data)
-                mark_template_data = vc.copy_mp_item(token, mark_folder_data[0]['id'], mark_template_income_data)
+        # Если якоря нет, используем папку проекта как родительскую
+        object_parent_id = project_anchor_data[0]['id'] if project_anchor_data else project_folder_data[0]['id']
+
+        # Проходим по объектам в матрице выбора
+        for object_index, object_folder in enumerate(selection_matrix['objects']):
+            if object_folder['id'] == '00000000-0000-0000-0000-000000000000':
+                # Для специального объекта создаем марки напрямую
+                for mark_index, mark_data in enumerate(object_folder['marks']):
+                    mark_folder_data = create_mark_folder(token, object_parent_id, mark_data)
+                    #копируем шаблон марки в папку марки
+                    mark_template_data = vc.copy_mp_item(token, mark_folder_data[0]['id'], mark_template_income_data)
+                    # Сохраняем ID папки марки в матрице выбора
+                    selection_matrix['objects'][object_index]['marks'][mark_index]['folder_structure_id'] = mark_folder_data[0]['id']
+            else:
+                # Для обычного объекта создаем папку объекта
+                object_folder_data = create_object_folder(token, object_parent_id, object_folder)
+                selection_matrix['objects'][object_index]['folder_structure_id'] = object_folder_data[0]['id']
+                # И марки внутри него
+                for mark_data in object_folder['marks']:
+                    mark_folder_data = create_mark_folder(token, object_folder_data[0]['id'], mark_data)
+                    #копируем шаблон марки в папку марки
+                    mark_template_data = vc.copy_mp_item(token, mark_folder_data[0]['id'], mark_template_income_data)
+                    # Сохраняем ID папки марки в матрице выбора
+                    selection_matrix['objects'][object_index]['marks'][mark_index]['folder_structure_id'] = mark_folder_data[0]['id']
+        
+        return jsonify(project_folder_data), 201 # Возвращаем ID нового проекта
     
-    return jsonify(project_folder_data), 201 # Возвращаем ID нового проекта
+    except Exception as e:
+        return jsonify({"error": "Не удалось создать структуру проекта"}), 500
+    
+    finally:
+        # Подготавливаем данные для обновления проекта
+        project_update_data = [{
+            "list_id": current_app.config['PROJECT_LIST_ID'],
+            "content_type_id": current_app.config['PROJECT_CT_ID'],
+            "id": project_id,
+            "selection_matrix": json.dumps(selection_matrix)
+        }]
+        
+        # Обновляем информацию о проекте в реестре
+        vc.update_mp_list(token, project_update_data)
