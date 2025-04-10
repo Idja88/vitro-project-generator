@@ -572,7 +572,7 @@ $(document).ready(function () {
             .then(project => {
                 // Check if project was already generated
                 if (project.fieldValueMap.is_created_by_generator === true) {
-                    $('#createProjectBtn').prop('disabled', false);
+                    $('#createProjectBtn').text('Обновить проект').prop('disabled', false);
                     initializeEmptyTable();
                     initializeTable(project.fieldValueMap.selection_matrix);
                 }
@@ -924,9 +924,34 @@ $(document).ready(function () {
 
         // Блокировка кнопки на время выполнения операции
         $('#createProjectBtn').prop('disabled', true).text('Создание...');
-        
-        // Создание структуры проекта в списке хранилища файлов
-        createProjectStructure(projects.id, selectionMatrixActual)
+
+        if (projects.fieldValueMap.is_created_by_generator === true) {
+
+            // Создание структуры проекта в списке хранилища файлов
+            updateProjectStructure(projects.id, selectionMatrixActual)
+            .then(response => {
+                // Очищаем поля ввода
+                $('#createProjectBtn').prop('disabled', true).text('Создать проект');
+
+                // Reinitialize table to fresh state
+                initializeEmptyTable();
+                
+                // Show success alert
+                showAlert(`Проект "${response[0].fieldValueMap.name}" успешно изменен! ID: ${response[0].id}`, 'success');
+            })
+            .catch(error => {
+                // Восстанавливаем кнопку
+                $('#createProjectBtn').prop('disabled', false).text('Создать проект');
+                
+                // Show error alert
+                showAlert(`Ошибка при создании проекта: ${error.message || 'Неизвестная ошибка'}`, 'danger');
+                console.error('Детали ошибки:', error);
+            });
+        }
+
+        if (projects.fieldValueMap.is_created_by_generator === false) {
+            // Создание структуры проекта в списке хранилища файлов
+            createProjectStructure(projects.id, selectionMatrixActual)
             .then(response => {
                 // Очищаем поля ввода
                 $('#createProjectBtn').prop('disabled', true).text('Создать проект');
@@ -945,6 +970,6 @@ $(document).ready(function () {
                 showAlert(`Ошибка при создании проекта: ${error.message || 'Неизвестная ошибка'}`, 'danger');
                 console.error('Детали ошибки:', error);
             });
+        }
     });
-
 });
