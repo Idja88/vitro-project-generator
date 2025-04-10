@@ -27,7 +27,7 @@ def vitro_cad_callback():
         
         # Create response with redirect
         response = make_response()
-        generator_url = url_for('create_project_page', project_id=project_id, _external=True)
+        generator_url = url_for('index', project_id=project_id, _external=True)
         
         # Add Link-Open header for same-tab redirect
         response.headers['Link-Open-New-Tab'] = generator_url

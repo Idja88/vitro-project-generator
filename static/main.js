@@ -355,34 +355,6 @@ $(document).ready(function () {
         });
     }
 
-    // Update project info
-    function updateProjectInfo(projectId, projectName, selectionMatrix) {
-        return new Promise((resolve, reject) => {
-            $.ajax({
-                url: `/set/update/${projectId}`,
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    projectName: projectName,
-                    selectionMatrix: selectionMatrix 
-                }),
-                success: function(response) {
-                    console.log('Информация о проекте успешно обновлена:', response);
-                    resolve(response);
-                },
-                error: function(xhr, status, error) {
-                    console.error('Ошибка при обновлении информации о проекте:', xhr.responseJSON || error);
-                    reject({
-                        stage: 'update',
-                        status: status,
-                        message: xhr.responseJSON?.error || 'Ошибка обновления данных проекта',
-                        details: xhr.responseText
-                    });
-                }
-            });
-        });
-    }
-
     //Create project structure
     function createProjectStructure(projectId, SelectionMatrix) {
         return new Promise((resolve, reject) => {
@@ -401,6 +373,31 @@ $(document).ready(function () {
                         stage: 'create',
                         status: status,
                         message: xhr.responseJSON?.error || 'Ошибка создания структуры проекта',
+                        details: xhr.responseText
+                    });
+                }
+            });
+        });
+    }
+
+    // Update project info
+    function updateProjectStructure(projectId, selectionMatrix) {
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                url: `/set/update/${projectId}`,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(selectionMatrix),
+                success: function(response) {
+                    console.log('Структура проекта успешно обновлена:', response);
+                    resolve(response);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Ошибка при обновлении структуры проекта:', xhr.responseJSON || error);
+                    reject({
+                        stage: 'update',
+                        status: status,
+                        message: xhr.responseJSON?.error || 'Ошибка обновления структуры проекта',
                         details: xhr.responseText
                     });
                 }

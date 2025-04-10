@@ -38,13 +38,9 @@ def create_app():
     app.register_blueprint(get.bp)
     app.register_blueprint(callback.bp)
 
-    @app.route('/')
-    def index():
-        return render_template('index.html')
-
-    @app.route('/create/<project_id>')
-    def create_project_page(project_id):
-        return render_template('create.html', project_id=project_id)
+    @app.route('/<project_id>')
+    def index(project_id):
+        return render_template('index.html', project_id=project_id)
 
     return app
 
