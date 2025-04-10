@@ -113,15 +113,10 @@ def prepare_template_data(token, template_folder_id):
 # Создаем структуру проекта
 @bp.route('/create/<project_id>', methods=['POST'])
 @require_token
-def create_new_project(token, project_id):
+def create_project_structure(token, project_id):
     # Получаем JSON из тела запроса
-    project_data = request.get_json()
-
-    # Преобразуем строку в JSON, если это необходимо
-    if isinstance(project_data, str):
-       selection_matrix = json.loads(project_data)
-    else:
-       selection_matrix = project_data
+    request_data = request.get_json()
+    selection_matrix = request_data
 
     try:
         # Подготавливаем данные шаблонов
@@ -129,7 +124,7 @@ def create_new_project(token, project_id):
         mark_template_income_data = prepare_template_data(token, current_app.config['MARK_TEMPLATE_FOLDER_ID'])
 
         # Создаем папку проекта
-        project_folder_data = create_project_folder(token, parent_id=None, project_data=project_data)
+        project_folder_data = create_project_folder(token, parent_id=None, project_data=selection_matrix)
 
         # Сохраняем ID папки проекта в selection_matrix
         selection_matrix['folder_structure_id'] = project_folder_data[0]['id']
@@ -178,3 +173,16 @@ def create_new_project(token, project_id):
     finally:
         # Обновляем информацию о проекте в реестре
         update_project_info(token, parent_id=None, project_data=selection_matrix)
+
+# Обновляем структуру проекта
+@bp.route('/update/<project_id>', methods=['POST'])
+@require_token
+def update_project_structure(token, project_id):
+    # Получаем JSON из тела запроса
+    request_data = request.get_json()
+    new_selection_matrix = request_data
+
+    old_project_data = vc.get_mp_item(token, project_id)
+    old_selection_matrix = old_project_data['fieldValueMap']['selection_matrix']
+    
+    return jsonify(old_project_data), 201
