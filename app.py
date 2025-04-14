@@ -41,7 +41,7 @@ def create_app():
 
     @app.route('/<project_id>')
     @require_token
-    def index(project_id):
+    def index(token, project_id):
         return render_template('index.html', project_id=project_id)
 
     return app
