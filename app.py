@@ -1,8 +1,9 @@
+import os
 from flask import Flask, render_template
-from werkzeug.middleware.proxy_fix import ProxyFix
 from config import configure_app
 from routes import set, get, callback
-import os
+from decorators import require_token
+from werkzeug.middleware.proxy_fix import ProxyFix
 from middleware import PrefixMiddleware
 
 def create_app():
@@ -39,6 +40,7 @@ def create_app():
     app.register_blueprint(callback.bp)
 
     @app.route('/<project_id>')
+    @require_token
     def index(project_id):
         return render_template('index.html', project_id=project_id)
 
