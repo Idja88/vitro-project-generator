@@ -169,57 +169,162 @@ $(document).ready(function () {
         return dataTable;
     }
 
-    function getSelectionMatrix(projectId, projectName) {
+    function getSelectionMatrix(projectId, projectName, projectMatrix) {
+        // Parse the original matrix with proper error handling
+        var originalMatrix;
+
+        if (!projectMatrix) {
+            // For a new project, initialize with empty structure
+            originalMatrix = { folder_structure_id: "", objects: [] };
+        } else {
+            try {
+                originalMatrix = typeof projectMatrix === 'string' ? JSON.parse(projectMatrix) : projectMatrix;
+            } catch (e) {
+                originalMatrix = { folder_structure_id: "", objects: [] };
+            }
+        }
+
         var selectionMatrix = { 
             id: projectId,
             name: projectName,
-            folder_structure_id: "",
+            folder_structure_id: originalMatrix.folder_structure_id || "",
             objects: []
         };
+
         var processedObjects = new Map();
-    
-        // Получаем все отмеченные чекбоксы
+        
+        // Get all checked checkboxes
         $('#selectionMatrix input[type="checkbox"]:checked').each(function() {
             var $checkbox = $(this);
             var $row = $checkbox.closest('tr');
             var $col = $checkbox.closest('td');
             
-            // Получаем ID и имя объекта из первой ячейки строки
+            // Get object info from the first cell
             var $objectCell = $row.find('td:first-child div');
             var objectId = $objectCell.data('object-id');
             var objectName = $objectCell.data('object-name');
             var objectNumber = $objectCell.data('object-number');
-    
-            // Получаем ID и имя марки из заголовка столбца
+        
+            // Get mark info from the column header
             var colIndex = $col.index();
             var $markHeader = $('#selectionMatrix thead th').eq(colIndex).find('div');
             var markId = $markHeader.data('mark-id');
             var markName = $markHeader.data('mark-name');
             var markNumber = $markHeader.data('mark-number');
-    
-            // Создаем или обновляем запись объекта
+        
+            // Create or update object entry
             if (!processedObjects.has(objectId)) {
+                // Find the object in the original matrix
+                var folderStructureId = "";
+                var originalObj = originalMatrix.objects.find(obj => obj.id === objectId);
+                if (originalObj) {
+                    folderStructureId = originalObj.folder_structure_id || "";
+                }
+                
                 processedObjects.set(objectId, {
                     id: objectId,
                     name: objectName,
                     number: objectNumber,
-                    folder_structure_id: "",
+                    folder_structure_id: folderStructureId,
+                    to_remove: false,
+                    deleted: false,
                     marks: []
                 });
             }
 
-            // Добавляем марку к объекту
+            // Add mark to object
             var objectEntry = processedObjects.get(objectId);
+            
+            // Check if we already have the mark's folder_structure_id
+            var markFolderStructureId = "";
+            var originalObj = originalMatrix.objects.find(obj => obj.id === objectId);
+            if (originalObj && originalObj.marks) {
+                var originalMark = originalObj.marks.find(mark => 
+                    mark.id === markId && 
+                    (mark.number || "") === (markNumber || "")
+                );
+                if (originalMark) {
+                    markFolderStructureId = originalMark.folder_structure_id || "";
+                }
+            }
+            
             objectEntry.marks.push({
                 id: markId,
                 name: markName,
-                number: markNumber,
-                folder_structure_id: ""
+                number: markNumber || "",
+                folder_structure_id: markFolderStructureId,
+                to_remove: false,
+                deleted: false
             });
         });
-    
-        // Преобразуем Map в массив объектов
+        
+        // Convert Map to array
         selectionMatrix.objects = Array.from(processedObjects.values());
+        
+        // Identify removed objects and marks if we have an original matrix
+        if (originalMatrix && originalMatrix.objects && originalMatrix.objects.length > 0) {
+            // Create a merged objects array containing both current and removed objects
+            const mergedObjects = [...selectionMatrix.objects];
+            
+            // First, identify objects that should be marked for removal
+            originalMatrix.objects.forEach(originalObj => {
+                const stillExists = selectionMatrix.objects.some(obj => obj.id === originalObj.id);
+                
+                if (!stillExists) {
+                    // This object is no longer selected - mark for removal but keep it
+                    const objectToRemove = {
+                        ...originalObj,
+                        to_remove: true,
+                        deleted: false
+                    };
+                    
+                    // Also mark all marks inside this object for removal
+                    if (originalObj.marks && Array.isArray(originalObj.marks)) {
+                        objectToRemove.marks = originalObj.marks.map(mark => ({
+                            ...mark,
+                            to_remove: true,
+                            deleted: false
+                        }));
+                    }
+                    
+                    mergedObjects.push(objectToRemove);
+                } else {
+                    // For existing objects, process their marks
+                    const currentObj = selectionMatrix.objects.find(obj => obj.id === originalObj.id);
+                    
+                    if (originalObj.marks && Array.isArray(originalObj.marks)) {
+                        // Create a merged marks array for this object
+                        const currentObjIndex = mergedObjects.findIndex(obj => obj.id === originalObj.id);
+                        const mergedMarks = [...mergedObjects[currentObjIndex].marks];
+                        
+                        // Check each original mark
+                        originalObj.marks.forEach(originalMark => {
+                            const markStillExists = currentObj.marks.some(mark => 
+                                mark.id === originalMark.id && 
+                                (mark.number || "") === (originalMark.number || "")
+                            );
+                            
+                            if (!markStillExists) {
+                                // This mark is no longer selected - mark for removal but keep it
+                                const markToRemove = {
+                                    ...originalMark,
+                                    toRemove: true,
+                                    deleted: false
+                                };
+                                mergedMarks.push(markToRemove);
+                            }
+                        });
+                        
+                        // Replace marks array with merged one
+                        mergedObjects[currentObjIndex].marks = mergedMarks;
+                    }
+                }
+            });
+            
+            // Replace objects array with merged one
+            selectionMatrix.objects = mergedObjects;
+        }
+        
         return selectionMatrix;
     }
 
@@ -816,8 +921,7 @@ $(document).ready(function () {
         } else {
             selectedRows = selectedRows.filter(idx => idx !== rowIdx);
         }
-        console.log('Selected rows:', selectedRows); // Debug
-        
+
         updateDeleteButtonState();
     });
     
@@ -839,7 +943,6 @@ $(document).ready(function () {
         } else {
             selectedColumns = selectedColumns.filter(idx => idx !== colIdx);
         }
-        console.log('Selected columns:', selectedColumns); // Debug
         
         updateDeleteButtonState();
     });
@@ -914,7 +1017,7 @@ $(document).ready(function () {
 
     // 5.8 Create Project Handler
     $('#createProjectBtn').on('click', function() {
-        var selectionMatrixActual = getSelectionMatrix(projects.id, projects.fieldValueMap.name);
+        var selectionMatrixActual = getSelectionMatrix(projects.id, projects.fieldValueMap.name, projects.fieldValueMap.selection_matrix);
 
         // Проверка на пустой выбор
         if (selectionMatrixActual.objects.length === 0) {
