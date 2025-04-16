@@ -268,6 +268,22 @@ $(document).ready(function () {
             
             // First, identify objects that should be marked for removal
             originalMatrix.objects.forEach(originalObj => {
+                // Skip already deleted objects
+                if (originalObj.deleted === true) {
+                    // Include deleted objects in the final matrix but ensure they're not marked for removal again
+                    const deletedObj = {
+                        ...originalObj,
+                        to_remove: false,
+                        deleted: true
+                    };
+                    
+                    // Only add if not already present
+                    if (!mergedObjects.some(obj => obj.id === originalObj.id)) {
+                        mergedObjects.push(deletedObj);
+                    }
+                    return; // Skip further processing for this object
+                }
+
                 const stillExists = selectionMatrix.objects.some(obj => obj.id === originalObj.id);
                 
                 if (!stillExists) {
@@ -280,11 +296,21 @@ $(document).ready(function () {
                     
                     // Also mark all marks inside this object for removal
                     if (originalObj.marks && Array.isArray(originalObj.marks)) {
-                        objectToRemove.marks = originalObj.marks.map(mark => ({
-                            ...mark,
-                            to_remove: true,
-                            deleted: false
-                        }));
+                        objectToRemove.marks = originalObj.marks.map(mark => {
+                            // Skip already deleted marks
+                            if (mark.deleted === true) {
+                                return {
+                                    ...mark,
+                                    to_remove: false,
+                                    deleted: true
+                                };
+                            }
+                            return {
+                                ...mark,
+                                to_remove: true,
+                                deleted: false
+                            };
+                        });
                     }
                     
                     mergedObjects.push(objectToRemove);
@@ -299,6 +325,25 @@ $(document).ready(function () {
                         
                         // Check each original mark
                         originalObj.marks.forEach(originalMark => {
+                            // Skip already deleted marks
+                            if (originalMark.deleted === true) {
+                                // Include deleted marks but don't mark for removal again
+                                const deletedMark = {
+                                    ...originalMark,
+                                    to_remove: false,
+                                    deleted: true
+                                };
+                                
+                                // Only add if not already present
+                                if (!mergedMarks.some(mark => 
+                                    mark.id === originalMark.id && 
+                                    (mark.number || "") === (originalMark.number || "")
+                                )) {
+                                    mergedMarks.push(deletedMark);
+                                }
+                                return;
+                            }
+
                             const markStillExists = currentObj.marks.some(mark => 
                                 mark.id === originalMark.id && 
                                 (mark.number || "") === (originalMark.number || "")
@@ -308,7 +353,7 @@ $(document).ready(function () {
                                 // This mark is no longer selected - mark for removal but keep it
                                 const markToRemove = {
                                     ...originalMark,
-                                    toRemove: true,
+                                    to_remove: true,
                                     deleted: false
                                 };
                                 mergedMarks.push(markToRemove);
@@ -692,7 +737,7 @@ $(document).ready(function () {
 
                 // If not genereated, initialize empty table
                 if (project.fieldValueMap.is_created_by_generator === false) {
-                    $('#createProjectBtn').prop('disabled', false);
+                    $('#createProjectBtn').text('Создать проект').prop('disabled', false);
                     initializeEmptyTable();
                 }
             })
@@ -1033,6 +1078,21 @@ $(document).ready(function () {
             return;
         }
 
+        // Store the selection matrix in a data attribute on the button for later use
+        $(this).data('selectionMatrix', selectionMatrixActual);
+        
+        // Show confirmation modal
+        $('#createProjectConfirmModal').modal('show');
+    });
+
+    // Add handler for the confirmation button
+    $(document).on('click', '#confirmCreateProject', function() {
+        // Get the stored selection matrix
+        var selectionMatrixActual = $('#createProjectBtn').data('selectionMatrix');
+        
+        // Hide the confirmation modal
+        $('#createProjectConfirmModal').modal('hide');
+        
         // Блокировка кнопки на время выполнения операции
         $('#createProjectBtn').prop('disabled', true).text('Создание...');
 
@@ -1042,9 +1102,6 @@ $(document).ready(function () {
             // Очищаем поля ввода
             $('#createProjectBtn').prop('disabled', true)
 
-            // Reinitialize table to fresh state
-            //initializeEmptyTable();
-            
             // Show success alert
             showAlert(`Проект "${response.name}" успешно создан! ID: ${response.id}`, 'success');
         })
