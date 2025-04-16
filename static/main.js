@@ -325,6 +325,7 @@ $(document).ready(function () {
             selectionMatrix.objects = mergedObjects;
         }
         
+        console.log("Selection Matrix:", selectionMatrix);
         return selectionMatrix;
     }
 
@@ -363,11 +364,11 @@ $(document).ready(function () {
         modal.modal('show');
         
         // Auto-hide success messages
-        if (type === 'success') {
-            setTimeout(() => {
-                modal.modal('hide');
-            }, 5000);
-        }
+        // if (type === 'success') {
+        //     setTimeout(() => {
+        //         modal.modal('hide');
+        //     }, 5000);
+        // }
     }
 
     // 3. API Functions
@@ -1028,51 +1029,25 @@ $(document).ready(function () {
         // Блокировка кнопки на время выполнения операции
         $('#createProjectBtn').prop('disabled', true).text('Создание...');
 
-        if (projects.fieldValueMap.is_created_by_generator === true) {
+        // Создание структуры проекта в списке хранилища файлов
+        createProjectStructure(projects.id, selectionMatrixActual)
+        .then(response => {
+            // Очищаем поля ввода
+            $('#createProjectBtn').prop('disabled', true)
 
-            // Создание структуры проекта в списке хранилища файлов
-            updateProjectStructure(projects.id, selectionMatrixActual)
-            .then(response => {
-                // Очищаем поля ввода
-                $('#createProjectBtn').prop('disabled', true).text('Создать проект');
-
-                // Reinitialize table to fresh state
-                initializeEmptyTable();
-                
-                // Show success alert
-                showAlert(`Проект "${response[0].fieldValueMap.name}" успешно изменен! ID: ${response[0].id}`, 'success');
-            })
-            .catch(error => {
-                // Восстанавливаем кнопку
-                $('#createProjectBtn').prop('disabled', false).text('Создать проект');
-                
-                // Show error alert
-                showAlert(`Ошибка при создании проекта: ${error.message || 'Неизвестная ошибка'}`, 'danger');
-                console.error('Детали ошибки:', error);
-            });
-        }
-
-        if (projects.fieldValueMap.is_created_by_generator === false) {
-            // Создание структуры проекта в списке хранилища файлов
-            createProjectStructure(projects.id, selectionMatrixActual)
-            .then(response => {
-                // Очищаем поля ввода
-                $('#createProjectBtn').prop('disabled', true).text('Создать проект');
-
-                // Reinitialize table to fresh state
-                initializeEmptyTable();
-                
-                // Show success alert
-                showAlert(`Проект "${response[0].fieldValueMap.name}" успешно создан! ID: ${response[0].id}`, 'success');
-            })
-            .catch(error => {
-                // Восстанавливаем кнопку
-                $('#createProjectBtn').prop('disabled', false).text('Создать проект');
-                
-                // Show error alert
-                showAlert(`Ошибка при создании проекта: ${error.message || 'Неизвестная ошибка'}`, 'danger');
-                console.error('Детали ошибки:', error);
-            });
-        }
+            // Reinitialize table to fresh state
+            //initializeEmptyTable();
+            
+            // Show success alert
+            showAlert(`Проект "${response.name}" успешно создан! ID: ${response.id}`, 'success');
+        })
+        .catch(error => {
+            // Восстанавливаем кнопку
+            $('#createProjectBtn').prop('disabled', false)
+            
+            // Show error alert
+            showAlert(`Ошибка при создании проекта: ${error.message || 'Неизвестная ошибка'}`, 'danger');
+            console.error('Детали ошибки:', error);
+        });
     });
 });
