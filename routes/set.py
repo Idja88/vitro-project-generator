@@ -118,7 +118,7 @@ def delete_folder(token, delete_data):
             "id": child
         }
         delete_income_data.append(child_delete_income_data)
-    
+
     # Удаляем папки
     deleted_data = vc.delete_mp_item(token, delete_income_data)
 
@@ -178,9 +178,10 @@ def create_project_structure(token, project_id):
                         # Сохраняем ID папки марки в матрице выбора
                         selection_matrix['objects'][object_index]['marks'][mark_index]['folder_structure_id'] = mark_folder_data[0]['id']
                     # Если папка марки помечана на на удаление, добавляем в список на удаление
-                    if mark_data['to_remove'] == True:
+                    if (mark_data['to_remove'] == True and mark_data['deleted'] == False):
                         delete_data.append(mark_data['folder_structure_id'])
                         # Помечаем папку марки как удаленную
+                        selection_matrix['objects'][object_index]['marks'][mark_index]['to_remove'] = False
                         selection_matrix['objects'][object_index]['marks'][mark_index]['deleted'] = True
             else:
                 # Если папка объекта уже существует, пропускаем создание
@@ -189,9 +190,10 @@ def create_project_structure(token, project_id):
                     object_folder_data = create_object_folder(token, object_parent_id, object_folder)
                     selection_matrix['objects'][object_index]['folder_structure_id'] = object_folder_data[0]['id']
                 # Если папка объекта помечена на удаление, добавляем в список на удаление
-                if object_folder['to_remove'] == True:
+                if (object_folder['to_remove'] == True and object_folder['deleted'] == False):
                     delete_data.append(object_folder['folder_structure_id'])
                     # Помечаем папку объекта как удаленную
+                    selection_matrix['objects'][object_index]['to_remove'] = False
                     selection_matrix['objects'][object_index]['deleted'] = True
                 # И марки внутри него
                 for mark_index, mark_data in enumerate(object_folder['marks']):
@@ -203,9 +205,10 @@ def create_project_structure(token, project_id):
                         # Сохраняем ID папки марки в матрице выбора
                         selection_matrix['objects'][object_index]['marks'][mark_index]['folder_structure_id'] = mark_folder_data[0]['id']
                     # Если папка марки помечана на удаление, добавляем в список на удаление
-                    if mark_data['to_remove'] == True:
+                    if (mark_data['to_remove'] == True and mark_data['deleted'] == False):
                         delete_data.append(mark_data['folder_structure_id'])
                         # Помечаем папку марки как удаленную
+                        selection_matrix['objects'][object_index]['marks'][mark_index]['to_remove'] = False
                         selection_matrix['objects'][object_index]['marks'][mark_index]['deleted'] = True
         
         #Если список не пустой, то запускаем процесс удаления
