@@ -527,6 +527,9 @@ $(document).ready(function () {
                     selectionMatrix = JSON.parse(selectionMatrix);
                 }
 
+                // Filter out deleted objects
+                const activeObjects = selectionMatrix.objects.filter(obj => obj.deleted !== true);
+                
                 // Prepare columns for DataTable
                 let columns = [{
                     title: 'Объект проектирования',
@@ -537,9 +540,12 @@ $(document).ready(function () {
                 // Map to track mark columns by ID
                 const markColumnsMap = new Map();
                 
-                // Process all objects and their marks to build unique mark columns
-                selectionMatrix.objects.forEach(obj => {
-                    obj.marks.forEach(mark => {
+                // Process all active objects and their non-deleted marks to build unique mark columns
+                activeObjects.forEach(obj => {
+                    // Filter out deleted marks within this object
+                    const activeMarks = obj.marks.filter(mark => mark.deleted !== true);
+                    
+                    activeMarks.forEach(mark => {
                         const markKey = `${mark.id}_${mark.number || ''}`;
                         if (!markColumnsMap.has(markKey)) {
                             markColumnsMap.set(markKey, {
@@ -565,7 +571,7 @@ $(document).ready(function () {
                 let checkboxSelections = [];
                 
                 // Convert from column-based marks to row-based objects with columns for each mark
-                selectionMatrix.objects.forEach(obj => {
+                activeObjects.forEach(obj => {
                     // Create a row for each object
                     let row = [
                         `<div data-object-id="${obj.id}" data-object-name="${obj.name}" data-object-number="${obj.number}">${obj.name}</div>`
@@ -581,8 +587,9 @@ $(document).ready(function () {
                     // Track which checkboxes should be checked
                     let rowSelections = Array(markColumnsMap.size).fill(false);
                     
-                    // Mark checkboxes for associated marks
-                    obj.marks.forEach(mark => {
+                    // Mark checkboxes for associated marks that aren't deleted
+                    const activeMarks = obj.marks.filter(mark => mark.deleted !== true);
+                    activeMarks.forEach(mark => {
                         const markKey = `${mark.id}_${mark.number || ''}`;
                         // Find the column index for this mark
                         let colIndex = -1;
