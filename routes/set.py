@@ -1,7 +1,8 @@
 from flask import Blueprint, jsonify, request, current_app
-import json
+from jsondiff import diff
 import vitro_cad_api as vc
 from decorators import require_token
+import copy
 
 bp = Blueprint('set', __name__, url_prefix='/set')
 
@@ -133,8 +134,7 @@ def delete_folder(token, delete_data):
 def create_project_structure(token, project_id):
     # Получаем JSON из тела запроса
     request_data = request.get_json()
-    selection_matrix = request_data
-
+    selection_matrix = copy.deepcopy(request_data)
     try:
         # Подготавливаем данные шаблонов
         project_template_income_data = prepare_template_data(token, current_app.config['PROJECT_TEMPLATE_FOLDER_ID'])
@@ -216,8 +216,12 @@ def create_project_structure(token, project_id):
             # Удаляем папки, в обратном порядке, чтобы не нарушить структуру
             deleted_data = delete_folder(token, delete_data[::-1])
         
-        # Обновляем информацию о проекте в реестре
-        updated_project_info = update_project_info(token, parent_id=None, project_data=selection_matrix)
+        # Сравниваем матрицы выбора, до и после
+        diffrence = diff(selection_matrix, request_data)
+
+        if diffrence:
+            # Если есть изменения, обновляем проект
+            project_updated_data = update_project_info(token, parent_id=None, project_data=selection_matrix)
         
         return jsonify(selection_matrix), 201 # Возвращаем обновленную информацию о проекте
 
