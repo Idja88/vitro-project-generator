@@ -407,13 +407,6 @@ $(document).ready(function () {
         
         // Show modal
         modal.modal('show');
-        
-        // Auto-hide success messages
-        // if (type === 'success') {
-        //     setTimeout(() => {
-        //         modal.modal('hide');
-        //     }, 5000);
-        // }
     }
 
     // 3. API Functions
