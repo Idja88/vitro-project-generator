@@ -25,7 +25,7 @@ def update_project_info(token, parent_id, project_data):
     if not project_updated_data:
         return jsonify({"error": "Не удалось изменить проект"}), 500
 
-    return jsonify(project_updated_data), 201 # Возвращаем ID нового проекта
+    return project_updated_data
 
 # Создание папки проекта
 def create_project_folder(token, parent_id, project_data):
@@ -110,6 +110,23 @@ def prepare_template_data(token, template_folder_id):
     
     return template_income_data
 
+def delete_folder(token, delete_data):
+    """Подготавливает данные для их удаления"""
+    delete_income_data = []
+    for child in delete_data:
+        child_delete_income_data = {
+            "id": child
+        }
+        delete_income_data.append(child_delete_income_data)
+    
+    # Удаляем папки
+    deleted_data = vc.delete_mp_item(token, delete_income_data)
+
+    if not  deleted_data:
+        return jsonify({"error": "Не удалось удалить папки проекта"}), 500
+        
+    return deleted_data
+
 # Создаем структуру проекта
 @bp.route('/create/<project_id>', methods=['POST'])
 @require_token
@@ -123,56 +140,86 @@ def create_project_structure(token, project_id):
         project_template_income_data = prepare_template_data(token, current_app.config['PROJECT_TEMPLATE_FOLDER_ID'])
         mark_template_income_data = prepare_template_data(token, current_app.config['MARK_TEMPLATE_FOLDER_ID'])
 
-        # Создаем папку проекта
-        project_folder_data = create_project_folder(token, parent_id=None, project_data=selection_matrix)
+        # Проверка, создана ли уже папка проекта
+        if selection_matrix['folder_structure_id'] == '':
+            # Создаем папку проекта
+            project_folder_data = create_project_folder(token, parent_id=None, project_data=selection_matrix)
 
-        # Сохраняем ID папки проекта в selection_matrix
-        selection_matrix['folder_structure_id'] = project_folder_data[0]['id']
+            # Сохраняем ID папки проекта в selection_matrix
+            selection_matrix['folder_structure_id'] = project_folder_data[0]['id']
 
-        # Копируем шаблоны проекта
-        project_template_data = vc.copy_mp_item(token, project_folder_data[0]['id'], project_template_income_data)
+            # Копируем шаблоны проекта
+            vc.copy_mp_item(token, project_folder_data[0]['id'], project_template_income_data)
 
         # Находим якорь в структуре проекта, если он есть
         project_anchor_data = vc.get_mp_children(
-            token, 
-            project_folder_data[0]['id'], 
-            recursive=True, 
+            token,
+            selection_matrix['folder_structure_id'],
+            recursive=True,
             query=f"item => item.GetValueAsString(\"name\") == \"{current_app.config['PROJECT_TEMPLATE_ANCHOR_NAME']}\""
         )
 
         # Если якоря нет, используем папку проекта как родительскую
-        object_parent_id = project_anchor_data[0]['id'] if project_anchor_data else project_folder_data[0]['id']
+        object_parent_id = project_anchor_data[0]['id'] if project_anchor_data else selection_matrix['folder_structure_id']
+
+        #Собираем список на удаление
+        delete_data = []
 
         # Проходим по объектам в матрице выбора
         for object_index, object_folder in enumerate(selection_matrix['objects']):
             if object_folder['id'] == '00000000-0000-0000-0000-000000000000':
                 # Для специального объекта создаем марки напрямую
                 for mark_index, mark_data in enumerate(object_folder['marks']):
-                    mark_folder_data = create_mark_folder(token, object_parent_id, mark_data)
-                    #копируем шаблон марки в папку марки
-                    mark_template_data = vc.copy_mp_item(token, mark_folder_data[0]['id'], mark_template_income_data)
-                    # Сохраняем ID папки марки в матрице выбора
-                    selection_matrix['objects'][object_index]['marks'][mark_index]['folder_structure_id'] = mark_folder_data[0]['id']
+                    # Если папка марки уже существует, пропускаем создание
+                    if mark_data['folder_structure_id'] == '':
+                        mark_folder_data = create_mark_folder(token, object_parent_id, mark_data)
+                        #копируем шаблон марки в папку марки
+                        vc.copy_mp_item(token, mark_folder_data[0]['id'], mark_template_income_data)
+                        # Сохраняем ID папки марки в матрице выбора
+                        selection_matrix['objects'][object_index]['marks'][mark_index]['folder_structure_id'] = mark_folder_data[0]['id']
+                    # Если папка марки помечана на на удаление, добавляем в список на удаление
+                    if mark_data['to_remove'] == True:
+                        delete_data.append(mark_data['folder_structure_id'])
+                        # Помечаем папку марки как удаленную
+                        selection_matrix['objects'][object_index]['marks'][mark_index]['deleted'] = True
             else:
-                # Для обычного объекта создаем папку объекта
-                object_folder_data = create_object_folder(token, object_parent_id, object_folder)
-                selection_matrix['objects'][object_index]['folder_structure_id'] = object_folder_data[0]['id']
+                # Если папка объекта уже существует, пропускаем создание
+                if object_folder['folder_structure_id'] == '':
+                    # Для обычного объекта создаем папку объекта
+                    object_folder_data = create_object_folder(token, object_parent_id, object_folder)
+                    selection_matrix['objects'][object_index]['folder_structure_id'] = object_folder_data[0]['id']
+                # Если папка объекта помечена на удаление, добавляем в список на удаление
+                if object_folder['to_remove'] == True:
+                    delete_data.append(object_folder['folder_structure_id'])
+                    # Помечаем папку объекта как удаленную
+                    selection_matrix['objects'][object_index]['deleted'] = True
                 # И марки внутри него
                 for mark_index, mark_data in enumerate(object_folder['marks']):
-                    mark_folder_data = create_mark_folder(token, object_folder_data[0]['id'], mark_data)
-                    #копируем шаблон марки в папку марки
-                    mark_template_data = vc.copy_mp_item(token, mark_folder_data[0]['id'], mark_template_income_data)
-                    # Сохраняем ID папки марки в матрице выбора
-                    selection_matrix['objects'][object_index]['marks'][mark_index]['folder_structure_id'] = mark_folder_data[0]['id']
+                    # Если папка марки уже существует, пропускаем создание
+                    if mark_data['folder_structure_id'] == '':
+                        mark_folder_data = create_mark_folder(token, object_folder['folder_structure_id'], mark_data)
+                        #копируем шаблон марки в папку марки
+                        vc.copy_mp_item(token, mark_folder_data[0]['id'], mark_template_income_data)
+                        # Сохраняем ID папки марки в матрице выбора
+                        selection_matrix['objects'][object_index]['marks'][mark_index]['folder_structure_id'] = mark_folder_data[0]['id']
+                    # Если папка марки помечана на удаление, добавляем в список на удаление
+                    if mark_data['to_remove'] == True:
+                        delete_data.append(mark_data['folder_structure_id'])
+                        # Помечаем папку марки как удаленную
+                        selection_matrix['objects'][object_index]['marks'][mark_index]['deleted'] = True
         
-        return jsonify(project_folder_data), 201 # Возвращаем ID нового проекта
-    
+        #Если список не пустой, то запускаем процесс удаления
+        if delete_data:
+            # Удаляем папки, в обратном порядке, чтобы не нарушить структуру
+            deleted_data = delete_folder(token, delete_data[::-1])
+        
+        # Обновляем информацию о проекте в реестре
+        updated_project_info = update_project_info(token, parent_id=None, project_data=selection_matrix)
+        
+        return jsonify(selection_matrix), 201 # Возвращаем обновленную информацию о проекте
+
     except Exception as e:
         return jsonify({"error": "Не удалось создать структуру проекта"}), 500
-    
-    finally:
-        # Обновляем информацию о проекте в реестре
-        update_project_info(token, parent_id=None, project_data=selection_matrix)
 
 # Обновляем структуру проекта
 @bp.route('/update/<project_id>', methods=['POST'])
@@ -182,7 +229,4 @@ def update_project_structure(token, project_id):
     request_data = request.get_json()
     new_selection_matrix = request_data
 
-    old_project_data = vc.get_mp_item(token, project_id)
-    old_selection_matrix = old_project_data['fieldValueMap']['selection_matrix']
-    
-    return jsonify(old_project_data), 201
+    return jsonify(new_selection_matrix), 201 # Возвращаем ID нового проекта
