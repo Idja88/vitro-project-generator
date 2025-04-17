@@ -89,6 +89,8 @@ def delete_mp_item(mp_token, data):
     try:
         with requests.post(url=url_string, headers=headers, json=data) as response:
             response.raise_for_status()
+            response_json = response.json()
+            return response_json
     except requests.exceptions.RequestException as e:
         print(f"Error deleting MP items: {e}")
         return None
