@@ -53,8 +53,8 @@
                     <div class="modal-body">
                         <div class="form-group">
                             <div class="dropdown">
-                                <label for="customerDropdown">Выберите заказчика:</label>
-                                <select class="form-control" id="customerDropdown" name="customerDropdown"></select>
+                                <!-- <label for="customerDropdown">Выберите заказчика:</label> -->
+                                <!-- <select class="form-control" id="customerDropdown" name="customerDropdown"></select> -->
                                 <label for="objectDropdown">Выберите объекты проектирования:</label>
                                 <select class="form-control" id="objectDropdown" multiple></select>
                             </div>
@@ -178,7 +178,7 @@
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
     <script src="https://cdn.datatables.net/select/1.7.0/js/dataTables.select.min.js"></script>
-    <script>const APP_CONFIG = {PREFIX: "{{ app_prefix }}"}; const PROJECT_ID = "{{project_id}}"</script>
+    <script>const APP_CONFIG = {PREFIX: "{{ app_prefix }}"}; const PROJECT_ID = "{{ project_id }}"</script>
     <script src="{{ url_for('static', filename='main.js') }}"></script>
 </body>
 </html>

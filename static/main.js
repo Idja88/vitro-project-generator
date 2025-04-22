@@ -429,19 +429,19 @@ $(document).ready(function () {
     function loadCustomersDropdown(companyId) {
         return new Promise((resolve, reject) => {
             $.getJSON(`/get/customers/${companyId}`, function (customers) {
-                var dropdown = $('#customerDropdown');
-                dropdown.empty();
-                dropdown.append($('<option value="">Выберите заказчика</option>'));
+                //var dropdown = $('#customerDropdown');
+                //dropdown.empty();
+                //dropdown.append($('<option value="">Выберите заказчика</option>'));
                 
-                $.each(customers, function (index, customer) {
-                    dropdown.append($('<option></option>')
-                        .attr('value', customer.id)
-                        .text(customer.fieldValueMap.name));
-                });
+                // $.each(customers, function (index, customer) {
+                //     dropdown.append($('<option></option>')
+                //         .attr('value', customer.id)
+                //         .text(customer.fieldValueMap.name));
+                // });
                 resolve(customers);
             }).fail(function (jqXHR, textStatus, errorThrown) {
                 console.error("Ошибка загрузки заказчиков:", textStatus, errorThrown);
-                $('#customerDropdown').html('<option value="">Ошибка загрузки</option>');
+                //$('#customerDropdown').html('<option value="">Ошибка загрузки</option>');
                 reject(errorThrown);
             });
         });
@@ -750,24 +750,30 @@ $(document).ready(function () {
         });
         
         // Затем проверяем и загружаем данные если нужно
-        if ($('#customerDropdown option').length <= 1) {
-            $('#customerDropdown').prop('disabled', true);
-            $('#objectDropdown')
-                .empty()
-                .append($('<option value="">Загрузка...</option>'))
-                .prop('disabled', true);
-            $('#addRowConfirm').prop('disabled', true);
-            
+        if ($('#objectDropdown option').length <= 1) {
             loadCustomersDropdown(projects.fieldValueMap.project_company_id)
-                .then(() => {
-                    $('#customerDropdown').prop('disabled', false);
-                    $('#objectDropdown')
-                        .empty()
-                        .append($('<option value="">Сначала выберите заказчика</option>'));
+                .then((customers) => {
+                    var selectedCustomerId = customers[0].id;
+
+                    if (selectedCustomerId) {
+                        loadObjectsDropdown(selectedCustomerId)
+                            .then(() => {
+                                // Enable all related controls
+                                $('#objectDropdown').prop('disabled', false);
+                                $('#addRowConfirm').prop('disabled', false);
+                                $('#newRowButton').prop('disabled', false);
+                            })
+                            .catch(error => {
+                                console.error('Ошибка при загрузке объектов:', error);
+                                // Disable all related controls
+                                $('#objectDropdown').prop('disabled', true);
+                                $('#addRowConfirm').prop('disabled', true);
+                                $('#newRowButton').prop('disabled', true);
+                            });
+                    }
                 })
                 .catch(() => {
-                    $('#customerDropdown').html('<option value="">Ошибка загрузки</option>');
-                    $('#customerDropdown').prop('disabled', true);
+                    console.error('Ошибка при загрузке заказчика:', error);
                 });
         }
     });
@@ -789,39 +795,6 @@ $(document).ready(function () {
                 .catch(() => {
                     $('#markDropdown').prop('disabled', true);
                 });
-        }
-    });
-
-    // 5.2 Dropdown Change Handlers
-    $('#customerDropdown').change(function() {
-        var selectedCustomerId = $(this).val();
-        var objectDropdown = $('#objectDropdown');
-        var addRowConfirmBtn = $('#addRowConfirm');
-        var newRowBtn = $('#newRowButton');
-        
-        if (selectedCustomerId) {
-            loadObjectsDropdown(selectedCustomerId)
-                .then(() => {
-                    // Enable all related controls
-                    objectDropdown.prop('disabled', false);
-                    addRowConfirmBtn.prop('disabled', false);
-                    newRowBtn.prop('disabled', false);
-                })
-                .catch(error => {
-                    console.error('Ошибка при загрузке объектов:', error);
-                    // Disable all related controls
-                    objectDropdown.prop('disabled', true);
-                    addRowConfirmBtn.prop('disabled', true);
-                    newRowBtn.prop('disabled', true);
-                });
-        } else {
-            // Reset and disable controls when no customer selected
-            objectDropdown
-                .empty()
-                .append($('<option value="">Сначала выберите заказчика</option>'))
-                .prop('disabled', true);
-            addRowConfirmBtn.prop('disabled', true);
-            newRowBtn.prop('disabled', true);
         }
     });
 
