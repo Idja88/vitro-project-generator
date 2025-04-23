@@ -6,6 +6,7 @@ $(document).ready(function () {
     var marks = [];
     var selectedRows = [];
     var selectedColumns = [];
+    var savedCheckboxStates = [];
 
     $.ajaxPrefilter(function(options) {
         if (options.url.startsWith('/') && APP_CONFIG.PREFIX) {
@@ -125,6 +126,17 @@ $(document).ready(function () {
             ],
             language: {
                 emptyTable: "Нет данных в таблице"
+            },
+            colReorder: {
+                enable: true,
+                columns: ':gt(0)',
+                headerRows: [0],
+            },
+            rowReorder: {
+                enable: true,
+                selector: 'td.select-cell',
+                update: true,
+                snapX: true,
             },
             drawCallback: function(settings) {
                 var api = this.api();
@@ -429,19 +441,9 @@ $(document).ready(function () {
     function loadCustomersDropdown(companyId) {
         return new Promise((resolve, reject) => {
             $.getJSON(`/get/customers/${companyId}`, function (customers) {
-                //var dropdown = $('#customerDropdown');
-                //dropdown.empty();
-                //dropdown.append($('<option value="">Выберите заказчика</option>'));
-                
-                // $.each(customers, function (index, customer) {
-                //     dropdown.append($('<option></option>')
-                //         .attr('value', customer.id)
-                //         .text(customer.fieldValueMap.name));
-                // });
                 resolve(customers);
             }).fail(function (jqXHR, textStatus, errorThrown) {
                 console.error("Ошибка загрузки заказчиков:", textStatus, errorThrown);
-                //$('#customerDropdown').html('<option value="">Ошибка загрузки</option>');
                 reject(errorThrown);
             });
         });
@@ -660,6 +662,17 @@ $(document).ready(function () {
                             width: "100px",
                         }
                     ],
+                    colReorder: {
+                        enable: true,
+                        columns: ':gt(0)',
+                        headerRows: [0],
+                    },
+                    rowReorder: {
+                        enable: true,
+                        selector: 'td.select-cell',
+                        update: true,
+                        snapX: true,
+                    },
                     drawCallback: function() {
                         // After table is drawn, check the appropriate checkboxes
                         tableData.forEach((row, rowIdx) => {
@@ -688,6 +701,8 @@ $(document).ready(function () {
         selectedRows = [];
         selectedColumns = [];
         
+        attachTableEventHandlers();
+
         // Reset button states
         updateDeleteButtonState();
     }
@@ -711,13 +726,23 @@ $(document).ready(function () {
                 width: "100px",
                 }
             ],
+            colReorder: {
+                columns: ':gt(0)',
+                headerRows: [0]
+            },
+            rowReorder: {
+                enable: true,
+                selector: 'td.select-cell',
+                update: true,
+                snapX: true,
+            },
             drawCallback: function() {
                 reattachEventHandlers();
             }
         });
     }
 
-    //4. Initialization of table data and project info
+    // 4. Initialization of table data and project info
     if (PROJECT_ID) {
         loadProjectInfo(PROJECT_ID)
             .then(project => {
@@ -1080,4 +1105,169 @@ $(document).ready(function () {
             console.error('Детали ошибки:', error);
         });
     });
+
+    // Добавьте эту функцию сразу после инициализации таблицы в любом месте 
+    function attachTableEventHandlers() {
+        // Удаляем существующие обработчики
+        dataTable.off('.dt');
+        
+        // Мастер-объект для хранения состояний чекбоксов по ID объекта и ID марки
+        // Это наше "единое место истины" независимое от DOM
+        var masterState = {};
+        
+        // Функция для инициализации мастер-состояния
+        function initializeMasterState() {
+            masterState = {};
+            
+            // Сканируем всю таблицу и создаем карту всех объект-марка комбинаций
+            $('#selectionMatrix tbody tr').each(function() {
+                var $objectDiv = $(this).find('td:first-child div');
+                var objectId = $objectDiv.data('object-id');
+                
+                if (!objectId) return;
+                
+                if (!masterState[objectId]) {
+                    masterState[objectId] = {};
+                }
+                
+                // Для каждого объекта проверяем все марки
+                $('#selectionMatrix thead th').each(function(colIdx) {
+                    if (colIdx === 0) return; // Skip first column
+                    
+                    var $div = $(this).find('div');
+                    if (!$div.length) return;
+                    
+                    var markId = $div.data('mark-id');
+                    var markNumber = $div.data('mark-number') || '';
+                    var markKey = markId + '_' + markNumber;
+                    
+                    // Проверяем состояние чекбокса для данной комбинации объект-марка
+                    var $cell = $($('#selectionMatrix tbody tr').get($objectDiv.closest('tr').index()))
+                                .find('td').eq(colIdx);
+                    var $checkbox = $cell.find('input[type="checkbox"]');
+                    var isChecked = $checkbox.length ? $checkbox[0].checked : false;
+                    
+                    // Сохраняем состояние в мастер-объект
+                    masterState[objectId][markKey] = isChecked;
+                });
+            });
+            
+            console.log("Initialized master state:", JSON.stringify(masterState, null, 2));
+        }
+        
+        // Функция для обновления состояния конкретного чекбокса в мастер-объекте
+        function updateMasterState(objectId, markKey, isChecked) {
+            if (!masterState[objectId]) {
+                masterState[objectId] = {};
+            }
+            masterState[objectId][markKey] = isChecked;
+            console.log(`Updated state for ${objectId}, ${markKey}: ${isChecked}`);
+        }
+        
+        // Инициализируем мастер-состояние при загрузке
+        initializeMasterState();
+        
+        // При изменении любого чекбокса обновляем мастер-объект
+        $('#selectionMatrix').on('change', 'input[type="checkbox"]', function() {
+            var $checkbox = $(this);
+            var isChecked = $checkbox[0].checked;
+            var $cell = $checkbox.closest('td');
+            var $row = $cell.closest('tr');
+            var colIdx = $cell.index();
+            
+            var $objectDiv = $row.find('td:first-child div');
+            var objectId = $objectDiv.data('object-id');
+            
+            var $markHeader = $('#selectionMatrix thead th').eq(colIdx).find('div');
+            var markId = $markHeader.data('mark-id');
+            var markNumber = $markHeader.data('mark-number') || '';
+            var markKey = markId + '_' + markNumber;
+            
+            updateMasterState(objectId, markKey, isChecked);
+        });
+        
+        // Функция для восстановления всех чекбоксов из мастер-состояния
+        function restoreAllCheckboxes() {
+            console.log("Restoring all checkboxes from master state");
+            
+            // 1. Сначала убеждаемся, что все чекбоксы существуют
+            $('#selectionMatrix tbody tr').each(function() {
+                $(this).find('td:not(:first-child)').each(function() {
+                    if (!$(this).find('input[type="checkbox"]').length) {
+                        $(this).html('<div class="checkbox-container"><input type="checkbox" class="form-check-input"></div>');
+                    }
+                });
+            });
+            
+            // 2. Восстанавливаем состояния из мастер-объекта
+            $('#selectionMatrix tbody tr').each(function() {
+                var $objectDiv = $(this).find('td:first-child div');
+                var objectId = $objectDiv.data('object-id');
+                
+                if (!objectId || !masterState[objectId]) return;
+                
+                // Для каждого объекта проверяем все марки
+                $('#selectionMatrix thead th').each(function(colIdx) {
+                    if (colIdx === 0) return; // Пропускаем первый столбец
+                    
+                    var $div = $(this).find('div');
+                    if (!$div.length) return;
+                    
+                    var markId = $div.data('mark-id');
+                    var markNumber = $div.data('mark-number') || '';
+                    var markKey = markId + '_' + markNumber;
+                    
+                    // Если для этой комбинации объект-марка есть сохраненное состояние
+                    if (masterState[objectId][markKey] !== undefined) {
+                        var $cell = $($('#selectionMatrix tbody tr').get($objectDiv.closest('tr').index()))
+                                    .find('td').eq(colIdx);
+                        var $checkbox = $cell.find('input[type="checkbox"]');
+                        
+                        if ($checkbox.length) {
+                            // Устанавливаем состояние напрямую через DOM-свойство
+                            $checkbox[0].checked = masterState[objectId][markKey];
+                        }
+                    }
+                });
+            });
+            
+            console.log("Restored checkboxes from master state");
+        }
+        
+        // После любого обновления DOM восстанавливаем чекбоксы и их состояния
+        dataTable.on('draw.dt', function() {
+            setTimeout(restoreAllCheckboxes, 50);
+        });
+        
+        // При начале перетаскивания колонки
+        dataTable.on('column-reorder.dt', function() {
+            console.log("Column reorder started");
+        });
+        
+        // После перемещения столбцов
+        dataTable.on('columns-reordered.dt', function() {
+            console.log("Columns reordered - restoring all checkboxes");
+            
+            // Даем небольшую задержку для обновления DOM
+            setTimeout(function() {
+                restoreAllCheckboxes();
+                
+                // Перепривязываем обработчики
+                reattachEventHandlers();
+            }, 100);
+        });
+        
+        // При перемещении строк
+        dataTable.on('row-reordered.dt', function() {
+            console.log("Row reordered - restoring all checkboxes");
+            
+            // Даем небольшую задержку для обновления DOM
+            setTimeout(function() {
+                restoreAllCheckboxes();
+                
+                // Перепривязываем обработчики
+                reattachEventHandlers();
+            }, 100);
+        });
+    }
 });
