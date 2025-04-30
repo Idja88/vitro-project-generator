@@ -94,3 +94,17 @@ def delete_mp_item(mp_token, data):
     except requests.exceptions.RequestException as e:
         print(f"Error deleting MP items: {e}")
         return None
+
+# Восстанавливаем элемент списка в Vitro-CAD MP
+def restore_mp_item(mp_token, item_id):
+    mp_url = current_app.config['VITRO_CAD_API_BASE_URL']
+    url_string = f"{mp_url}/api/item/restore/{item_id}"
+    headers = {'Authorization': mp_token}
+    try:
+        with requests.post(url=url_string, headers=headers) as response:
+            response.raise_for_status()
+            response_json = response.json()
+            return response_json
+    except requests.exceptions.RequestException as e:
+        print(f"Error restoring MP items: {e}")
+        return None
