@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Генератор Проектов</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.css" rel="stylesheet" integrity="sha384-pLdz7B8fCz67WCt1ia07iekybqLYOs8EBhBCAzsYPb0a7uox8jSB6RaN6zf0GZ0Z" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous">
     <link href="https://cdn.datatables.net/2.2.2/css/dataTables.bootstrap4.css" rel="stylesheet" integrity="sha384-rG5DsaAzNwlm3IGqEawoGl4WHaT0NO8/VVdjY5kZpnl/b2feukhYTIb89Y184cgr" crossorigin="anonymous">
     <link href="https://cdn.datatables.net/colreorder/2.0.4/css/colReorder.bootstrap4.css" rel="stylesheet" integrity="sha384-sZZ7FXrKKzVVwahnH0sfEtGxogiJzs7Kqr//UWX/t8oFwZuON9f/pue5+7++WDtL" crossorigin="anonymous">
     <link href="https://cdn.datatables.net/rowreorder/1.5.0/css/rowReorder.bootstrap4.css" rel="stylesheet" integrity="sha384-bpTOejsoRXR3KnhFofbizRXHS0RDnc9gWxpb1PYuKuWvY4oGqX+y/+MOiXhzwU/R" crossorigin="anonymous">
     <link href="https://cdn.datatables.net/select/3.0.0/css/select.bootstrap4.css" rel="stylesheet" integrity="sha384-9kUrBvJnHqLpXAxnj8aTMaIUfYtRDWyUe8inF3GN8llEs5rPaRzi83jAgLZhQtxF" crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
     <div class="container-fluid mt-4">
@@ -175,12 +176,16 @@
 
     <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.7.0.js" integrity="sha384-ogycHROOTGA//2Q8YUfjz1Sr7xMOJTUmY2ucsPVuXAg4CtpgQJQzGZsX768KqetU" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/js/bootstrap.js" integrity="sha384-AOHPfOD4WCwCMAGJIzdIL1mo+l1zLNufRq4DA9jDcW1Eh1T3TeQoRaq9jJq0oAR0" crossorigin="anonymous"></script>
     <script src="https://cdn.datatables.net/2.2.2/js/dataTables.js" integrity="sha384-gGekiWQ/bm8p71RTsvhPShoIBxcf8BsVjRTi0WY8FvxuQa2nKS0PKHiSXV9nfW/A" crossorigin="anonymous"></script>
     <script src="https://cdn.datatables.net/2.2.2/js/dataTables.bootstrap4.js" integrity="sha384-zNhLQXVfbsNMy4yxmaWgoZ7RVDmzTYQ3/y1HXPwR2sakXOh563PWfrivaYmDAzDz" crossorigin="anonymous"></script>
     <script src="https://cdn.datatables.net/colreorder/2.0.4/js/dataTables.colReorder.js" integrity="sha384-Lxe12BRMW7qMGaRkKTCu41QtCBPILDNWUXIFijqEOb1zDXYquC37TTMd0Oeirw1X" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/colreorder/2.0.4/js/colReorder.bootstrap4.js"></script>
     <script src="https://cdn.datatables.net/rowreorder/1.5.0/js/dataTables.rowReorder.js" integrity="sha384-mBc+RASAA7jtvOQzw1AxLDYuzQYn+M6d5MjAmjCSWctHnS4xHJr9BpM71rRNh2A2" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/rowreorder/1.5.0/js/rowReorder.bootstrap4.js"></script>
     <script src="https://cdn.datatables.net/select/3.0.0/js/dataTables.select.js" integrity="sha384-hJjpz/IhFX8FAfkNB7zZrVouwlDrs/fzYxtAlUH5Ks1daudIQpG5hRjFp4xIphDb" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/select/3.0.0/js/select.bootstrap4.js"></script>
     <script>const APP_CONFIG = {PREFIX: "{{ app_prefix }}"}; const PROJECT_ID = "{{ project_id }}"</script>
     <script src="{{ url_for('static', filename='main.js') }}"></script>
 
