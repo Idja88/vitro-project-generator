@@ -51,7 +51,14 @@ $(document).ready(function () {
         $('#selectionMatrix thead').off('click', '**');
 
         // Обработчик выделения строк
-        $('#selectionMatrix tbody').on('click', 'td.select-cell', function(e) {
+        //$('#selectionMatrix tbody').on('click', 'td', function(e) {
+        $('#selectionMatrix tbody').on('click', 'td:not(:first-child)', function(e) {
+
+            // Проверяем, был ли клик на чекбоксе или его контейнере
+            if ($(e.target).is('input[type="checkbox"]')) {
+                return; // Игнорируем клики на чекбоксы
+            }
+            
             e.stopPropagation();
             var row = $(this).closest('tr');
             var rowIdx = dataTable.row(row).index();
@@ -76,9 +83,9 @@ $(document).ready(function () {
             $(this).toggleClass('selected');
             
             // Выделение всего столбца
-            dataTable.column(colIdx).nodes().each(function() {
-                $(this).toggleClass('column-selected');
-            });
+            // dataTable.column(colIdx).nodes().each(function() {
+            //     $(this).toggleClass('column-selected');
+            // });
             
             if ($(this).hasClass('selected')) {
                 if (!selectedColumns.includes(colIdx)) {
@@ -138,6 +145,7 @@ $(document).ready(function () {
                 update: true,
                 snapX: true,
             },
+            select: false,
             drawCallback: function(settings) {
                 var api = this.api();
                 
@@ -177,6 +185,15 @@ $(document).ready(function () {
                 }
             }
         });
+
+        // Reset global variables
+        selectedRows = [];
+        selectedColumns = [];
+        
+        attachTableEventHandlers();
+
+        // Reset button states
+        updateDeleteButtonState();
         
         return dataTable;
     }
@@ -673,6 +690,7 @@ $(document).ready(function () {
                         update: true,
                         snapX: true,
                     },
+                    select: false,
                     drawCallback: function() {
                         // After table is drawn, check the appropriate checkboxes
                         tableData.forEach((row, rowIdx) => {
@@ -736,6 +754,7 @@ $(document).ready(function () {
                 update: true,
                 snapX: true,
             },
+            select: false,
             drawCallback: function() {
                 reattachEventHandlers();
             }
@@ -951,45 +970,49 @@ $(document).ready(function () {
     });
 
     // 5.4 Selection Handlers
-    $('#selectionMatrix tbody').on('click', 'td.select-cell', function(e) {
-        e.stopPropagation(); // Prevent event bubbling
-        var row = $(this).closest('tr');
-        var rowIdx = dataTable.row(row).index();
+    // $('#selectionMatrix tbody').on('click', 'td.select-cell', function(e) {
+    //     e.stopPropagation(); // Prevent event bubbling
+    //     var row = $(this).closest('tr');
+    //     var rowIdx = dataTable.row(row).index();
         
-        row.toggleClass('selected');
+    //     row.toggleClass('selected');
         
-        if (row.hasClass('selected')) {
-            if (!selectedRows.includes(rowIdx)) {
-                selectedRows.push(rowIdx);
-            }
-        } else {
-            selectedRows = selectedRows.filter(idx => idx !== rowIdx);
-        }
+    //     if (row.hasClass('selected')) {
+    //         if (!selectedRows.includes(rowIdx)) {
+    //             selectedRows.push(rowIdx);
+    //         }
+    //     } else {
+    //         selectedRows = selectedRows.filter(idx => idx !== rowIdx);
+    //     }
 
-        updateDeleteButtonState();
-    });
+    //     console.log("Selected rows:", selectedRows);
+
+    //     updateDeleteButtonState();
+    // });
     
-    $('#selectionMatrix thead').on('click', 'th:not(:first-child)', function(e) {
-        e.stopPropagation(); // Prevent event bubbling
-        var colIdx = $(this).index();
-        $(this).toggleClass('selected');
+    // $('#selectionMatrix thead').on('click', 'th:not(:first-child)', function(e) {
+    //     e.stopPropagation(); // Prevent event bubbling
+    //     var colIdx = $(this).index();
+    //     $(this).toggleClass('selected');
         
-        // Highlight entire column
-        var column = dataTable.column(colIdx);
-        column.nodes().each(function() {
-            $(this).toggleClass('column-selected');
-        });
+    //     // Highlight entire column
+    //     var column = dataTable.column(colIdx);
+    //     column.nodes().each(function() {
+    //         $(this).toggleClass('column-selected');
+    //     });
         
-        if ($(this).hasClass('selected')) {
-            if (!selectedColumns.includes(colIdx)) {
-                selectedColumns.push(colIdx);
-            }
-        } else {
-            selectedColumns = selectedColumns.filter(idx => idx !== colIdx);
-        }
+    //     if ($(this).hasClass('selected')) {
+    //         if (!selectedColumns.includes(colIdx)) {
+    //             selectedColumns.push(colIdx);
+    //         }
+    //     } else {
+    //         selectedColumns = selectedColumns.filter(idx => idx !== colIdx);
+    //     }
+
+    //     console.log("Selected columns:", selectedColumns);
         
-        updateDeleteButtonState();
-    });
+    //     updateDeleteButtonState();
+    // });
 
     // 5.5 Delete Handlers
     $('#deleteButton').on('click', function() {
@@ -1235,17 +1258,17 @@ $(document).ready(function () {
         }
         
         // После любого обновления DOM восстанавливаем чекбоксы и их состояния
-        dataTable.on('draw.dt', function() {
-            setTimeout(restoreAllCheckboxes, 50);
-        });
+        // dataTable.on('draw', function() {
+        //     setTimeout(restoreAllCheckboxes, 50);
+        // });
         
         // При начале перетаскивания колонки
-        dataTable.on('column-reorder.dt', function() {
-            console.log("Column reorder started");
-        });
+        // dataTable.on('column-reorder', function() {
+        //     console.log("Column reorder started");
+        // });
         
         // После перемещения столбцов
-        dataTable.on('columns-reordered.dt', function() {
+        dataTable.on('columns-reordered', function() {
             console.log("Columns reordered - restoring all checkboxes");
             
             // Даем небольшую задержку для обновления DOM
@@ -1258,15 +1281,15 @@ $(document).ready(function () {
         });
         
         // При перемещении строк
-        dataTable.on('row-reordered.dt', function() {
+        dataTable.on('row-reordered', function() {
             console.log("Row reordered - restoring all checkboxes");
             
             // Даем небольшую задержку для обновления DOM
             setTimeout(function() {
-                restoreAllCheckboxes();
+               restoreAllCheckboxes();
                 
                 // Перепривязываем обработчики
-                reattachEventHandlers();
+               reattachEventHandlers();
             }, 100);
         });
     }
