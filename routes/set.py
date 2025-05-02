@@ -174,19 +174,49 @@ def create_project_structure(token, project_id):
                         vc.copy_mp_item(token, mark_folder_data[0]['id'], mark_template_income_data)
                         # Сохраняем ID папки марки в матрице выбора
                         selection_matrix['objects'][object_index]['marks'][mark_index]['folder_structure_id'] = mark_folder_data[0]['id']
-                    # Если папка марки помечана на на удаление, добавляем в список на удаление
+                    # Если папка марки помечена на удаление, добавляем в список на удаление
                     if (mark_data['to_remove'] == True and mark_data['deleted'] == False):
                         mark_folder_deleted_id = vc.delete_mp_item(token, [{"id": mark_data['folder_structure_id']}])
                         if mark_folder_deleted_id:
                             # Помечаем папку марки как удаленную
                             selection_matrix['objects'][object_index]['marks'][mark_index]['to_remove'] = False
                             selection_matrix['objects'][object_index]['marks'][mark_index]['deleted'] = True
+                    # Если папка марки помечена на восстановление, добавляем в список на восстановление
+                    if (mark_data['to_restore'] == True and mark_data['deleted'] == True):
+                        # Ищем папку марки в корзине
+                        mark_folder_to_restore_id = vc.get_mp_children(
+                            token, 
+                            current_app.config['RECYCLE_BIN_LIST_ID'],
+                            recursive=False,
+                            query=f"item => item.GetValueAsGuid(\"source_id\") == \"{mark_data['folder_structure_id']}\""
+                        )
+                        # Если папка марки найдена в корзине, восстанавливаем ее
+                        if mark_folder_to_restore_id:
+                            mark_folder_restored_id = vc.restore_mp_item(token, mark_folder_to_restore_id[0]['id'])
+                            # Помечаем папку марки как восстановленную
+                            selection_matrix['objects'][object_index]['marks'][mark_index]['to_restore'] = False
+                            selection_matrix['objects'][object_index]['marks'][mark_index]['deleted'] = False
             else:
                 # Если папка объекта уже существует, пропускаем создание
                 if object_folder['folder_structure_id'] == '':
                     # Для обычного объекта создаем папку объекта
                     object_folder_data = create_object_folder(token, object_parent_id, object_folder)
                     selection_matrix['objects'][object_index]['folder_structure_id'] = object_folder_data[0]['id']
+                # Если папка объекта помечена на восстановление, добавляем в список на восстановление
+                if (object_folder['to_restore'] == True and object_folder['deleted'] == True):
+                    # Ищем папку объекта в корзине
+                    object_folder_to_restore_id = vc.get_mp_children(
+                        token, 
+                        current_app.config['RECYCLE_BIN_LIST_ID'],
+                        recursive=False,
+                        query=f"item => item.GetValueAsGuid(\"source_id\") == \"{object_folder['folder_structure_id']}\""
+                    )
+                    # Если папка объекта найдена в корзине, восстанавливаем ее
+                    if object_folder_to_restore_id:
+                        object_folder_restored_id = vc.restore_mp_item(token, object_folder_to_restore_id[0]['id'])
+                        # Помечаем папку объекта как восстановленную
+                        selection_matrix['objects'][object_index]['to_restore'] = False
+                        selection_matrix['objects'][object_index]['deleted'] = False
                 # И марки внутри него
                 for mark_index, mark_data in enumerate(object_folder['marks']):
                     # Если папка марки уже существует, пропускаем создание
@@ -196,13 +226,28 @@ def create_project_structure(token, project_id):
                         vc.copy_mp_item(token, mark_folder_data[0]['id'], mark_template_income_data)
                         # Сохраняем ID папки марки в матрице выбора
                         selection_matrix['objects'][object_index]['marks'][mark_index]['folder_structure_id'] = mark_folder_data[0]['id']
-                    # Если папка марки помечана на удаление, добавляем в список на удаление
+                    # Если папка марки помечена на удаление, добавляем в список на удаление
                     if (mark_data['to_remove'] == True and mark_data['deleted'] == False):
                         mark_folder_deleted_id = vc.delete_mp_item(token, [{"id": mark_data['folder_structure_id']}])
                         if mark_folder_deleted_id:
                             # Помечаем папку марки как удаленную
                             selection_matrix['objects'][object_index]['marks'][mark_index]['to_remove'] = False
                             selection_matrix['objects'][object_index]['marks'][mark_index]['deleted'] = True
+                    # Если папка марки помечена на восстановление, добавляем в список на восстановление
+                    if (mark_data['to_restore'] == True and mark_data['deleted'] == True):
+                        # Ищем папку марки в корзине
+                        mark_folder_to_restore_id = vc.get_mp_children(
+                            token, 
+                            current_app.config['RECYCLE_BIN_LIST_ID'],
+                            recursive=False,
+                            query=f"item => item.GetValueAsGuid(\"source_id\") == \"{mark_data['folder_structure_id']}\""
+                        )
+                        # Если папка марки найдена в корзине, восстанавливаем ее
+                        if mark_folder_to_restore_id:
+                            mark_folder_restored_id = vc.restore_mp_item(token, mark_folder_to_restore_id[0]['id'])
+                            # Помечаем папку марки как восстановленную
+                            selection_matrix['objects'][object_index]['marks'][mark_index]['to_restore'] = False
+                            selection_matrix['objects'][object_index]['marks'][mark_index]['deleted'] = False
                 # Если папка объекта помечена на удаление, добавляем в список на удаление
                 if (object_folder['to_remove'] == True and object_folder['deleted'] == False):
                     object_folder_deleted_id = vc.delete_mp_item(token, [{"id": object_folder['folder_structure_id']}])
