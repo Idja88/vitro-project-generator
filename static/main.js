@@ -127,8 +127,8 @@ $(document).ready(function () {
             columns: currentColumns,
             columnDefs: [
                 {
-                    targets: '_all',
-                    width: "100px",
+                    targets: 0, 
+                    width: "100%",
                 }
             ],
             language: {
@@ -582,8 +582,7 @@ $(document).ready(function () {
                 // Prepare columns for DataTable
                 let columns = [{
                     title: 'Объект проектирования',
-                    className: 'dt-center select-cell',
-                    width: '200px'
+                    className: 'dt-center select-cell'
                 }];
                 
                 // Map to track mark columns by ID
@@ -667,8 +666,8 @@ $(document).ready(function () {
                     columns: columns,
                     columnDefs: [
                         {
-                            targets: '_all',
-                            width: "100px",
+                            targets: 0, 
+                            width: "100%",
                         }
                     ],
                     colReorder: {
@@ -727,13 +726,12 @@ $(document).ready(function () {
             },
             columns: [{
                 title: 'Объект проектирования',
-                className: 'dt-center select-cell',
-                width: '200px'
+                className: 'dt-center select-cell'
             }],
             columnDefs: [
                 {
-                targets: '_all',
-                width: "100px",
+                    targets: 0,
+                    width: "100%",
                 }
             ],
             colReorder: {
