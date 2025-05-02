@@ -17,6 +17,7 @@ class Config:
     MARK_LIST_ID = os.getenv("MARK_LIST_ID")
     OBJECT_LIST_ID = os.getenv("OBJECT_LIST_ID")
     DOCUMENT_LIST_ID = os.getenv("DOCUMENT_LIST_ID")
+    RECYCLE_BIN_LIST_ID = os.getenv("RECYCLE_BIN_LIST_ID")
 
     PROJECT_CT_ID = os.getenv("PROJECT_CT_ID")
     CUSTOMER_CT_ID = os.getenv("CUSTOMER_CT_ID")
