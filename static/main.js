@@ -213,6 +213,8 @@ $(document).ready(function () {
             }
         }
 
+        console.log("Original Matrix:", originalMatrix);
+
         var selectionMatrix = { 
             id: projectId,
             name: projectName,
@@ -220,19 +222,20 @@ $(document).ready(function () {
             objects: []
         };
 
+        // Создаем Map для отслеживания выбранных объектов и марок
         var processedObjects = new Map();
         
-        // Get all checked checkboxes
+        // ЭТАП 1: Обрабатываем все отмеченные чекбоксы
         $('#selectionMatrix input[type="checkbox"]:checked').each(function() {
             var $checkbox = $(this);
             var $row = $checkbox.closest('tr');
             var $col = $checkbox.closest('td');
             
             // Get object info from the first cell
-            var $objectCell = $row.find('td:first-child div');
-            var objectId = $objectCell.data('object-id');
-            var objectName = $objectCell.data('object-name');
-            var objectNumber = $objectCell.data('object-number');
+            var $objectDiv = $row.find('td:first-child div');
+            var objectId = $objectDiv.data('object-id');
+            var objectName = $objectDiv.data('object-name');
+            var objectNumber = $objectDiv.data('object-number');
         
             // Get mark info from the column header
             var colIndex = $col.index();
@@ -241,32 +244,40 @@ $(document).ready(function () {
             var markName = $markHeader.data('mark-name');
             var markNumber = $markHeader.data('mark-number');
         
+            // Check if this object was previously deleted
+            var wasObjectDeleted = false;
+            var folderStructureId = "";
+            var originalObj = originalMatrix.objects.find(obj => obj.id === objectId);
+            
+            if (originalObj) {
+                folderStructureId = originalObj.folder_structure_id || "";
+                wasObjectDeleted = originalObj.deleted === true;
+            }
+            
             // Create or update object entry
             if (!processedObjects.has(objectId)) {
-                // Find the object in the original matrix
-                var folderStructureId = "";
-                var originalObj = originalMatrix.objects.find(obj => obj.id === objectId);
-                if (originalObj) {
-                    folderStructureId = originalObj.folder_structure_id || "";
-                }
-                
                 processedObjects.set(objectId, {
                     id: objectId,
                     name: objectName,
                     number: objectNumber,
                     folder_structure_id: folderStructureId,
                     to_remove: false,
-                    deleted: false,
-                    marks: []
+                    deleted: wasObjectDeleted,
+                    // Если объект ранее был удален И сейчас выбран заново, помечаем для восстановления
+                    to_restore: wasObjectDeleted,
+                    marks: [],
+                    // Дополнительное поле для отслеживания, что объект был явно выбран
+                    explicitly_selected: true
                 });
             }
 
             // Add mark to object
             var objectEntry = processedObjects.get(objectId);
-            
-            // Check if we already have the mark's folder_structure_id
+
+            // Check if this mark was previously deleted
             var markFolderStructureId = "";
-            var originalObj = originalMatrix.objects.find(obj => obj.id === objectId);
+            var wasMarkDeleted = false;
+
             if (originalObj && originalObj.marks) {
                 var originalMark = originalObj.marks.find(mark => 
                     mark.id === markId && 
@@ -274,130 +285,111 @@ $(document).ready(function () {
                 );
                 if (originalMark) {
                     markFolderStructureId = originalMark.folder_structure_id || "";
+                    wasMarkDeleted = originalMark.deleted === true;
                 }
             }
-            
-            objectEntry.marks.push({
-                id: markId,
-                name: markName,
-                number: markNumber || "",
-                folder_structure_id: markFolderStructureId,
-                to_remove: false,
-                deleted: false
-            });
+
+            // Проверяем, есть ли уже эта марка в объекте
+            var existingMarkIndex = objectEntry.marks.findIndex(mark => 
+                mark.id === markId && mark.number === (markNumber || "")
+            );
+
+            if (existingMarkIndex === -1) {
+                // Добавляем новую марку
+                objectEntry.marks.push({
+                    id: markId,
+                    name: markName,
+                    number: markNumber || "",
+                    folder_structure_id: markFolderStructureId,
+                    to_remove: false,
+                    deleted: wasMarkDeleted,
+                    // Если марка ранее была удалена И сейчас выбрана, помечаем для восстановления
+                    to_restore: wasMarkDeleted,
+                    // Дополнительное поле для отслеживания, что марка была явно выбрана
+                    explicitly_selected: true
+                });
+            } else {
+                // Обновляем существующую марку, помечая как явно выбранную
+                objectEntry.marks[existingMarkIndex].to_restore = wasMarkDeleted;
+                objectEntry.marks[existingMarkIndex].explicitly_selected = true;
+            }
         });
         
-        // Convert Map to array
-        selectionMatrix.objects = Array.from(processedObjects.values());
+        // ЭТАП 2: Объединяем данные из текущего выбора с данными из оригинальной матрицы
         
-        // Identify removed objects and marks if we have an original matrix
+        // Начинаем с создания массива из Map
+        var selectedObjects = Array.from(processedObjects.values());
+        
+        // Копируем все объекты из оригинальной матрицы
         if (originalMatrix && originalMatrix.objects && originalMatrix.objects.length > 0) {
-            // Create a merged objects array containing both current and removed objects
-            const mergedObjects = [...selectionMatrix.objects];
-            
-            // First, identify objects that should be marked for removal
             originalMatrix.objects.forEach(originalObj => {
-                // Skip already deleted objects
-                if (originalObj.deleted === true) {
-                    // Include deleted objects in the final matrix but ensure they're not marked for removal again
-                    const deletedObj = {
-                        ...originalObj,
-                        to_remove: false,
-                        deleted: true
-                    };
-                    
-                    // Only add if not already present
-                    if (!mergedObjects.some(obj => obj.id === originalObj.id)) {
-                        mergedObjects.push(deletedObj);
-                    }
-                    return; // Skip further processing for this object
-                }
-
-                const stillExists = selectionMatrix.objects.some(obj => obj.id === originalObj.id);
+                // Ищем объект в списке выбранных
+                var foundObject = selectedObjects.find(obj => obj.id === originalObj.id);
                 
-                if (!stillExists) {
-                    // This object is no longer selected - mark for removal but keep it
-                    const objectToRemove = {
-                        ...originalObj,
-                        to_remove: true,
-                        deleted: false
-                    };
-                    
-                    // Also mark all marks inside this object for removal
-                    if (originalObj.marks && Array.isArray(originalObj.marks)) {
-                        objectToRemove.marks = originalObj.marks.map(mark => {
-                            // Skip already deleted marks
-                            if (mark.deleted === true) {
-                                return {
-                                    ...mark,
-                                    to_remove: false,
-                                    deleted: true
-                                };
-                            }
-                            return {
-                                ...mark,
-                                to_remove: true,
-                                deleted: false
-                            };
-                        });
-                    }
-                    
-                    mergedObjects.push(objectToRemove);
-                } else {
-                    // For existing objects, process their marks
-                    const currentObj = selectionMatrix.objects.find(obj => obj.id === originalObj.id);
-                    
-                    if (originalObj.marks && Array.isArray(originalObj.marks)) {
-                        // Create a merged marks array for this object
-                        const currentObjIndex = mergedObjects.findIndex(obj => obj.id === originalObj.id);
-                        const mergedMarks = [...mergedObjects[currentObjIndex].marks];
-                        
-                        // Check each original mark
+                if (foundObject) {
+                    // Объект был выбран явно, обработаем все его марки из оригинальной матрицы
+                    if (originalObj.marks && originalObj.marks.length > 0) {
                         originalObj.marks.forEach(originalMark => {
-                            // Skip already deleted marks
-                            if (originalMark.deleted === true) {
-                                // Include deleted marks but don't mark for removal again
-                                const deletedMark = {
-                                    ...originalMark,
-                                    to_remove: false,
-                                    deleted: true
-                                };
-                                
-                                // Only add if not already present
-                                if (!mergedMarks.some(mark => 
-                                    mark.id === originalMark.id && 
-                                    (mark.number || "") === (originalMark.number || "")
-                                )) {
-                                    mergedMarks.push(deletedMark);
-                                }
-                                return;
-                            }
-
-                            const markStillExists = currentObj.marks.some(mark => 
-                                mark.id === originalMark.id && 
-                                (mark.number || "") === (originalMark.number || "")
+                            // Ищем марку среди явно выбранных
+                            var foundMark = foundObject.marks.find(mark => 
+                                mark.id === originalMark.id && mark.number === (originalMark.number || "")
                             );
                             
-                            if (!markStillExists) {
-                                // This mark is no longer selected - mark for removal but keep it
-                                const markToRemove = {
+                            if (!foundMark) {
+                                // Если марка не была явно выбрана, добавляем её с оригинальными свойствами
+                                // Если она была удалена, сохраняем это состояние
+                                // Если не была удалена, помечаем для удаления (to_remove: true)
+                                foundObject.marks.push({
                                     ...originalMark,
-                                    to_remove: true,
-                                    deleted: false
-                                };
-                                mergedMarks.push(markToRemove);
+                                    to_remove: !originalMark.deleted,
+                                    to_restore: false  // только явно выбранные марки помечаются для восстановления
+                                });
                             }
                         });
-                        
-                        // Replace marks array with merged one
-                        mergedObjects[currentObjIndex].marks = mergedMarks;
                     }
+                } else {
+                    // Объект не был явно выбран, добавляем его полностью из оригинальной матрицы
+                    var objectCopy = { 
+                        ...originalObj, 
+                        // Если объект был удален, сохраняем это состояние,
+                        // иначе помечаем для удаления (to_remove: true)
+                        to_remove: !originalObj.deleted,
+                        to_restore: false, // только явно выбранные объекты помечаются для восстановления
+                        explicitly_selected: false
+                    };
+                    
+                    // Обрабатываем марки
+                    if (originalObj.marks && originalObj.marks.length > 0) {
+                        objectCopy.marks = originalObj.marks.map(originalMark => ({
+                            ...originalMark,
+                            // Если марка была удалена, сохраняем это состояние,
+                            // иначе помечаем для удаления (to_remove: true)
+                            to_remove: !originalMark.deleted,
+                            to_restore: false,  // только явно выбранные марки помечаются для восстановления
+                            explicitly_selected: false
+                        }));
+                    }
+                    
+                    selectedObjects.push(objectCopy);
                 }
             });
-            
-            // Replace objects array with merged one
-            selectionMatrix.objects = mergedObjects;
         }
+        
+        // ЭТАП 3: Очистка служебных полей перед отправкой на сервер
+        selectionMatrix.objects = selectedObjects.map(obj => {
+            // Удаляем служебное поле explicitly_selected
+            const { explicitly_selected, ...objectWithoutExplicitlySelected } = obj;
+            
+            // Очищаем поле explicitly_selected из всех марок
+            if (obj.marks && obj.marks.length > 0) {
+                objectWithoutExplicitlySelected.marks = obj.marks.map(mark => {
+                    const { explicitly_selected, ...markWithoutExplicitlySelected } = mark;
+                    return markWithoutExplicitlySelected;
+                });
+            }
+            
+            return objectWithoutExplicitlySelected;
+        });
         
         console.log("Selection Matrix:", selectionMatrix);
         return selectionMatrix;
