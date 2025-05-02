@@ -103,8 +103,6 @@ def restore_mp_item(mp_token, item_id):
     try:
         with requests.post(url=url_string, headers=headers) as response:
             response.raise_for_status()
-            response_json = response.json()
-            return response_json
     except requests.exceptions.RequestException as e:
         print(f"Error restoring MP items: {e}")
         return None
