@@ -104,100 +104,6 @@ $(document).ready(function () {
         $('#deleteButton').prop('disabled', !hasSelection);
     }
 
-    function reinitializeTable(currentData, currentColumns, checkboxStates) {
-        // Destroy and clear existing table
-        if ($.fn.DataTable.isDataTable('#selectionMatrix')) {
-            dataTable.destroy();
-            $('#selectionMatrix').empty();
-        }
-        
-        // Rebuild table structure
-        var tableHtml = '<thead><tr>';
-        currentColumns.forEach(function(col) {
-            tableHtml += `<th>${col.title}</th>`;
-        });
-        tableHtml += '</tr></thead><tbody></tbody>';
-        $('#selectionMatrix').html(tableHtml);
-        
-        // Initialize new table
-        dataTable = $('#selectionMatrix').DataTable({
-            ordering: false,
-            dom: '<"row"<"col-sm-12"tr>>',
-            data: currentData,
-            columns: currentColumns,
-            columnDefs: [
-                {
-                    targets: 0, 
-                    width: "100%",
-                }
-            ],
-            language: {
-                emptyTable: "Нет данных в таблице"
-            },
-            colReorder: {
-                enable: true,
-                columns: ':gt(0)',
-                headerRows: [0],
-            },
-            rowReorder: {
-                enable: true,
-                selector: 'td.select-cell',
-                update: true,
-                snapX: true,
-            },
-            select: false,
-            drawCallback: function(settings) {
-                var api = this.api();
-                
-                // Ensure checkboxes exist in all cells first
-                api.columns().every(function(index) {
-                    if (index > 0) {
-                        var column = this;
-                        column.nodes().each(function(cell) {
-                            if (!$(cell).find('input[type="checkbox"]').length) {
-                                $(cell).html('<div class="checkbox-container"><input type="checkbox" class="form-check-input"></div>');
-                            }
-                        });
-                    }
-                });
-
-                // Then restore states and handlers
-                reattachEventHandlers();
-                if (checkboxStates) {
-                    restoreCheckboxStates(checkboxStates);
-                }
-
-                // Finally restore column selections if any
-                if (selectedColumns && selectedColumns.length > 0) {
-                    setTimeout(() => {
-                        selectedColumns.forEach(function(colIdx) {
-                            if (colIdx < api.columns().nodes().length) {
-                                var header = $(api.column(colIdx).header());
-                                if (header.length) {
-                                    header.addClass('selected');
-                                    api.column(colIdx).nodes().each(function(cell) {
-                                        $(cell).addClass('column-selected');
-                                    });
-                                }
-                            }
-                        });
-                    }, 0);
-                }
-            }
-        });
-
-        // Reset global variables
-        selectedRows = [];
-        selectedColumns = [];
-        
-        attachTableEventHandlers();
-
-        // Reset button states
-        updateDeleteButtonState();
-        
-        return dataTable;
-    }
-
     function getSelectionMatrix(projectId, projectName, projectMatrix) {
         // Parse the original matrix with proper error handling
         var originalMatrix;
@@ -561,6 +467,41 @@ $(document).ready(function () {
     }
 
     // 4. Initialization
+    // Helper function for empty table initialization
+    function initializeEmptyTable() {
+        dataTable = $('#selectionMatrix').DataTable({
+            ordering: false,
+            dom: '<"row"<"col-sm-12"tr>>',
+            language: {
+                emptyTable: "Нет данных в таблице"
+            },
+            columns: [{
+                title: 'Объект проектирования',
+                className: 'dt-center select-cell'
+            }],
+            columnDefs: [
+                {
+                    targets: 0,
+                    width: "100%",
+                }
+            ],
+            colReorder: {
+                columns: ':gt(0)',
+                headerRows: [0]
+            },
+            rowReorder: {
+                enable: true,
+                selector: 'td.select-cell',
+                update: true,
+                snapX: true,
+            },
+            select: false,
+            drawCallback: function() {
+                reattachEventHandlers();
+            }
+        });
+    }
+
     function initializeTable(selectionMatrix) {
         // Destroy existing table if it exists
         if ($.fn.DataTable.isDataTable('#selectionMatrix')) {
@@ -716,27 +657,40 @@ $(document).ready(function () {
         updateDeleteButtonState();
     }
 
-    // Helper function for empty table initialization
-    function initializeEmptyTable() {
+    function reinitializeTable(currentData, currentColumns, checkboxStates) {
+        // Destroy and clear existing table
+        if ($.fn.DataTable.isDataTable('#selectionMatrix')) {
+            dataTable.destroy();
+            $('#selectionMatrix').empty();
+        }
+        
+        // Rebuild table structure
+        var tableHtml = '<thead><tr>';
+        currentColumns.forEach(function(col) {
+            tableHtml += `<th>${col.title}</th>`;
+        });
+        tableHtml += '</tr></thead><tbody></tbody>';
+        $('#selectionMatrix').html(tableHtml);
+        
+        // Initialize new table
         dataTable = $('#selectionMatrix').DataTable({
             ordering: false,
             dom: '<"row"<"col-sm-12"tr>>',
-            language: {
-                emptyTable: "Нет данных в таблице"
-            },
-            columns: [{
-                title: 'Объект проектирования',
-                className: 'dt-center select-cell'
-            }],
+            data: currentData,
+            columns: currentColumns,
             columnDefs: [
                 {
-                    targets: 0,
+                    targets: 0, 
                     width: "100%",
                 }
             ],
+            language: {
+                emptyTable: "Нет данных в таблице"
+            },
             colReorder: {
+                enable: true,
                 columns: ':gt(0)',
-                headerRows: [0]
+                headerRows: [0],
             },
             rowReorder: {
                 enable: true,
@@ -745,10 +699,56 @@ $(document).ready(function () {
                 snapX: true,
             },
             select: false,
-            drawCallback: function() {
+            drawCallback: function(settings) {
+                var api = this.api();
+                
+                // Ensure checkboxes exist in all cells first
+                api.columns().every(function(index) {
+                    if (index > 0) {
+                        var column = this;
+                        column.nodes().each(function(cell) {
+                            if (!$(cell).find('input[type="checkbox"]').length) {
+                                $(cell).html('<div class="checkbox-container"><input type="checkbox" class="form-check-input"></div>');
+                            }
+                        });
+                    }
+                });
+
+                // Then restore states and handlers
                 reattachEventHandlers();
+                if (checkboxStates) {
+                    restoreCheckboxStates(checkboxStates);
+                }
+
+                // Finally restore column selections if any
+                if (selectedColumns && selectedColumns.length > 0) {
+                    setTimeout(() => {
+                        selectedColumns.forEach(function(colIdx) {
+                            if (colIdx < api.columns().nodes().length) {
+                                var header = $(api.column(colIdx).header());
+                                if (header.length) {
+                                    header.addClass('selected');
+                                    api.column(colIdx).nodes().each(function(cell) {
+                                        $(cell).addClass('column-selected');
+                                    });
+                                }
+                            }
+                        });
+                    }, 0);
+                }
             }
         });
+
+        // Reset global variables
+        selectedRows = [];
+        selectedColumns = [];
+        
+        attachTableEventHandlers();
+
+        // Reset button states
+        updateDeleteButtonState();
+        
+        return dataTable;
     }
 
     // 4. Initialization of table data and project info
