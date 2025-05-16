@@ -302,11 +302,13 @@ $(document).ready(function () {
     }
 
     // Add utility function for alerts at the top of the file
-    function showAlert(message, type) {
+    // Обновленная функция showAlert для поддержки кнопки "Перейти"
+    function showAlert(message, type, linkUrl) {
         // Get modal elements
         const modal = $('#alertModal');
         const header = modal.find('.modal-header');
         const title = modal.find('.modal-title');
+        const goToBtn = $('#goToProjectBtn');
         
         // Reset classes
         header.removeClass('bg-success bg-danger bg-warning');
@@ -315,7 +317,7 @@ $(document).ready(function () {
         switch(type) {
             case 'success':
                 header.addClass('bg-success text-white');
-                title.text('Успешно');
+                title.text('Успех');
                 break;
             case 'danger':
                 header.addClass('bg-danger text-white');
@@ -331,6 +333,18 @@ $(document).ready(function () {
         
         // Set message
         $('#alertMessage').text(message);
+        
+        // Handle link button visibility and URL
+        if (linkUrl) {
+            goToBtn.removeClass('d-none').attr('href', linkUrl);
+
+            // Add click handler that closes the modal when the button is clicked
+            goToBtn.off('click').on('click', function() {
+                modal.modal('hide');
+            });
+        } else {
+            goToBtn.addClass('d-none').attr('href', '#');
+        }
         
         // Show modal
         modal.modal('show');
@@ -1107,7 +1121,8 @@ $(document).ready(function () {
             $('#createProjectBtn').prop('disabled', true)
 
             // Show success alert
-            showAlert(`Проект "${response.name}" успешно создан! ID: ${response.id}`, 'success');
+            //showAlert(`Проект "${response.name}" успешно создан! ID: ${response.id}`, 'success');
+            showAlert(`Cтруктура проекта "${response.matrix.name}" успешно создана! Перейти в структуру хранения Vitro-CAD?`, 'success', response.project_link);
         })
         .catch(error => {
             // Восстанавливаем кнопку

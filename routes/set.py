@@ -263,7 +263,17 @@ def create_project_structure(token, project_id):
             # Если есть изменения, обновляем проект
             project_updated_data = update_project_info(token, parent_id=None, project_data=selection_matrix)
         
-        return jsonify(selection_matrix), 201 # Возвращаем обновленную информацию о проекте
+        #Формируем ссылку на проект
+        project_folder = vc.get_mp_item(token, selection_matrix['folder_structure_id'])
+        project_link = f"{current_app.config['VITRO_CAD_API_BASE_URL']}/site/{project_folder['siteId']}/list/{project_folder['listId']}/item/{project_folder['id']}"
+
+        # Формируем ответ
+        response_data = {
+            "matrix": selection_matrix,
+            "project_link": project_link
+        }
+
+        return jsonify(response_data), 201 # Возвращаем обновленную информацию о проекте
 
     except Exception as e:
         return jsonify({"error": "Не удалось создать структуру проекта"}), 500
