@@ -487,9 +487,9 @@ $(document).ready(function () {
         exportBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Экспорт...');
         
         // Формируем URL для скачивания
-        const exportUrl = `/export/excel/${projectId}`;
+        let exportUrl = `/export/excel/${projectId}`;
 
-        // Добавляем префикс если он есть (аналогично ajaxPrefilter)
+        // Добавляем префикс если он есть
         if (APP_CONFIG.PREFIX) {
             exportUrl = APP_CONFIG.PREFIX + exportUrl;
         }
