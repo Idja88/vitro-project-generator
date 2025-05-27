@@ -488,6 +488,11 @@ $(document).ready(function () {
         
         // Формируем URL для скачивания
         const exportUrl = `/export/excel/${projectId}`;
+
+        // Добавляем префикс если он есть (аналогично ajaxPrefilter)
+        if (APP_CONFIG.PREFIX) {
+            exportUrl = APP_CONFIG.PREFIX + exportUrl;
+        }
         
         // Создаем скрытую ссылку для скачивания
         const downloadLink = document.createElement('a');
