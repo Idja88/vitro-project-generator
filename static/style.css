@@ -1,6 +1,16 @@
+body {
+    background-color: #F6F8FC;
+}
+
 /* Основные стили таблицы */
 .table-responsive {
     margin-top: 20px;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.1), 0 6px 20px 0 rgba(0, 0, 0, 0.1); /* Добавлена тень */
+}
+
+/* Стили для кнопок */
+#newRowButton, #newColumnButton, #deleteButton, #createProjectButton, #projectName {
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1), 0 3px 10px 0 rgba(0, 0, 0, 0.1); /* Добавлена тень */
 }
 
 /* Стили для модальных окон */
@@ -20,6 +30,10 @@
 #selectionMatrix thead th.selected {
     background-color: #cfe2ff !important;
     border-color: #9ec5fe !important;
+}
+
+#selectionMatrix thead th:first-child {
+    cursor: default;
 }
 
 #selectionMatrix thead th:not(:first-child) {

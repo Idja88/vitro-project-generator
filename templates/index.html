@@ -14,33 +14,25 @@
 </head>
 <body>
     <div class="container-fluid mt-4">
-        <div class="mx-auto" style="width: 500px; text-align: center;">
-            <h2 class="mb-4">ГЕНЕРАТОР ПРОЕКТОВ</h2>
+        <div class="mx-auto">
+            <h2 class="mb-4 text-center">ГЕНЕРАТОР ПРОЕКТОВ</h2>
         </div>
         <div class="form-group">
-            <label for="projectName">Название проекта:</label>
             <input class="form-control" type="text" id="projectName" name="projectName" disabled>
         </div>
         <div class="btn-toolbar mb-3 d-flex justify-content-between">
-            <div class="btn-group">
-                <button id="newRowButton" class="btn btn-primary mr-2">Новая строка</button>
-                <button id="newColumnButton" class="btn btn-primary mr-2">Новый столбец</button>
-                <button id="deleteButton" class="btn btn-danger" disabled>Удалить</button>
+            <div>
+                <button id="newRowButton" class="btn btn-primary"><i class="fas fa-plus"></i> строка</button>
+                <button id="newColumnButton" class="btn btn-primary"><i class="fas fa-plus"></i> столбец</button>
+                <button id="deleteButton" class="btn btn-danger" disabled><i class="fas fa-trash"></i> Удалить</button>
             </div>
             <div>
-                <button id="createProjectBtn" class="btn btn-success justify-content-end" disabled>Создать Проект</button>
+                <button id="createProjectBtn" class="btn btn-success" disabled>Создать</button>
+                <button id="exportExcelButton" class="btn btn-info"><i class="fas fa-file-excel"></i> Excel</button>
             </div>
         </div>
         <div class="table-responsive">
-            <table id="selectionMatrix" class="table table-bordered" style="width:100%">
-                <thead>
-                    <tr>
-                        <th>Объект проектирования</th>
-                    </tr>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
+            <table id="selectionMatrix" class="table table-bordered table-condensed" style="width:100%"></table>
         </div>
     
         <!-- Modal для добавления строк -->
@@ -56,8 +48,6 @@
                     <div class="modal-body">
                         <div class="form-group">
                             <div class="dropdown">
-                                <!-- <label for="customerDropdown">Выберите заказчика:</label> -->
-                                <!-- <select class="form-control" id="customerDropdown" name="customerDropdown"></select> -->
                                 <label for="objectDropdown">Выберите объекты проектирования:</label>
                                 <select class="form-control" id="objectDropdown" multiple></select>
                             </div>
@@ -162,12 +152,12 @@
                     </div>
                     <div class="modal-body">
                         <div class="alert alert-warning">
-                            Вы уверены, что хотите создать/изменить структуру по выбранным элементам?
+                            Вы уверены, что хотите создать/обновить структуру по выбранным элементам?
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
-                        <button type="button" class="btn btn-success" id="confirmCreateProject">Подтвердить</button>
+                        <button type="button" class="btn btn-success" id="confirmCreateProject">Создать</button>
                     </div>
                 </div>
             </div>
