@@ -480,6 +480,34 @@ $(document).ready(function () {
         });
     }
 
+    function exportToExcelViaAPI(projectId) {        
+        // Показываем индикатор загрузки
+        const exportBtn = $('#exportExcelButton');
+        const originalHtml = exportBtn.html();
+        exportBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Экспорт...');
+        
+        // Формируем URL для скачивания
+        const exportUrl = `/export/excel/${projectId}`;
+        
+        // Создаем скрытую ссылку для скачивания
+        const downloadLink = document.createElement('a');
+        downloadLink.href = exportUrl;
+        downloadLink.style.display = 'none';
+        document.body.appendChild(downloadLink);
+        
+        // Инициируем скачивание
+        downloadLink.click();
+        
+        // Удаляем ссылку
+        document.body.removeChild(downloadLink);
+        
+        // Восстанавливаем кнопку через небольшую задержку
+        setTimeout(() => {
+            exportBtn.prop('disabled', false).html(originalHtml);
+            //showAlert('Excel файл загружается...', 'success');
+        }, 500);
+    }
+
     // 4. Initialization
     // Helper function for empty table initialization
     function initializeEmptyTable() {
@@ -771,14 +799,15 @@ $(document).ready(function () {
             .then(project => {
                 // Check if project was already generated
                 if (project.fieldValueMap.is_created_by_generator === true) {
-                    $('#createProjectBtn').text('Обновить проект').prop('disabled', false);
+                    $('#createProjectBtn').text('Обновить').prop('disabled', false);
+                    $('#confirmCreateProject').text('Обновить');
                     initializeEmptyTable();
                     initializeTable(project.fieldValueMap.selection_matrix);
                 }
 
                 // If not genereated, initialize empty table
                 if (project.fieldValueMap.is_created_by_generator === false) {
-                    $('#createProjectBtn').text('Создать проект').prop('disabled', false);
+                    $('#createProjectBtn').text('Создать').prop('disabled', false);
                     initializeEmptyTable();
                 }
             })
@@ -1086,6 +1115,16 @@ $(document).ready(function () {
         resetSelections();
     });
 
+    // Обработчик кнопки экспорта
+    $('#exportExcelButton').on('click', function() {
+        if (!projects.fieldValueMap.selection_matrix) {
+            showAlert('Матрица выбора отсутствует', 'warning');
+            return;
+        }
+
+        exportToExcelViaAPI(projects.id);
+    });
+
     // 5.8 Create Project Handler
     $('#createProjectBtn').on('click', function() {
         var selectionMatrixActual = getSelectionMatrix(projects.id, projects.fieldValueMap.name, projects.fieldValueMap.selection_matrix);
@@ -1121,7 +1160,6 @@ $(document).ready(function () {
             $('#createProjectBtn').prop('disabled', true)
 
             // Show success alert
-            //showAlert(`Проект "${response.name}" успешно создан! ID: ${response.id}`, 'success');
             showAlert(`Cтруктура проекта "${response.matrix.name}" успешно создана! Перейти в структуру хранения Vitro-CAD?`, 'success', response.project_link);
         })
         .catch(error => {

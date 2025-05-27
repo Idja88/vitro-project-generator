@@ -1,7 +1,7 @@
 import os
 from flask import Flask, render_template
 from config import configure_app
-from routes import set, get, callback
+from routes import set, get, callback, export
 from decorators import require_token
 from werkzeug.middleware.proxy_fix import ProxyFix
 from middleware import PrefixMiddleware
@@ -38,6 +38,7 @@ def create_app():
     app.register_blueprint(set.bp)
     app.register_blueprint(get.bp)
     app.register_blueprint(callback.bp)
+    app.register_blueprint(export.bp)
 
     @app.route('/<project_id>')
     @require_token
