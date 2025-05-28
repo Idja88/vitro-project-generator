@@ -48,12 +48,21 @@ $(document).ready(function () {
     function reattachEventHandlers() {
         // Удаляем все существующие обработчики
         $('#selectionMatrix tbody').off('click', '**');
-        $('#selectionMatrix thead').off('click', '**');
+        
+        // Для заголовков используем более специфичный селектор или API
+        if (dataTable && dataTable.columns) {
+            // Удаляем обработчики через API
+            var api = dataTable.api ? dataTable : $('#selectionMatrix').DataTable();
+            
+            // Удаляем все существующие обработчики с заголовков
+            api.columns().every(function(index) {
+                var $header = $(this.header());
+                $header.off('click.columnSelect');
+            });
+        }
 
         // Обработчик выделения строк
-        //$('#selectionMatrix tbody').on('click', 'td', function(e) {
         $('#selectionMatrix tbody').on('click', 'td:not(:first-child)', function(e) {
-
             // Проверяем, был ли клик на чекбоксе или его контейнере
             if ($(e.target).is('input[type="checkbox"]')) {
                 return; // Игнорируем клики на чекбоксы
@@ -75,28 +84,45 @@ $(document).ready(function () {
             
             updateDeleteButtonState();
         });
-    
-        // Обработчик выделения столбцов
-        $('#selectionMatrix thead').on('click', 'th:not(:first-child)', function(e) {
-            e.stopPropagation();
-            var colIdx = $(this).index();
-            $(this).toggleClass('selected');
+
+        // Обработчик выделения столбцов через DataTables API
+        if (dataTable && dataTable.columns) {
+            var api = dataTable.api ? dataTable : $('#selectionMatrix').DataTable();
             
-            // Выделение всего столбца
-            // dataTable.column(colIdx).nodes().each(function() {
-            //     $(this).toggleClass('column-selected');
-            // });
-            
-            if ($(this).hasClass('selected')) {
-                if (!selectedColumns.includes(colIdx)) {
-                    selectedColumns.push(colIdx);
-                }
-            } else {
-                selectedColumns = selectedColumns.filter(idx => idx !== colIdx);
-            }
-            
-            updateDeleteButtonState();
-        });
+            // Привязываем обработчики к каждому заголовку через API
+            api.columns().every(function(index) {
+                if (index === 0) return; // Пропускаем первый столбец
+                
+                var $header = $(this.header());
+                
+                // Добавляем обработчик с namespace для безопасного удаления
+                $header.on('click.columnSelect', function(e) {
+                    e.stopPropagation();
+                    
+                    // Используем индекс из API, а не DOM
+                    var colIdx = index;
+                    
+                    $(this).toggleClass('selected');
+                    
+                    // Выделение всего столбца через API
+                    api.column(colIdx).nodes().each(function(cell) {
+                        $(cell).toggleClass('column-selected');
+                    });
+                    
+                    if ($(this).hasClass('selected')) {
+                        if (!selectedColumns.includes(colIdx)) {
+                            selectedColumns.push(colIdx);
+                        }
+                    } else {
+                        selectedColumns = selectedColumns.filter(idx => idx !== colIdx);
+                    }
+                    
+                    updateDeleteButtonState();
+                    
+                    console.log("Selected columns:", selectedColumns);
+                });
+            });
+        }
     }
 
     function updateDeleteButtonState() {
@@ -143,12 +169,20 @@ $(document).ready(function () {
             var objectName = $objectDiv.data('object-name');
             var objectNumber = $objectDiv.data('object-number');
         
-            // Get mark info from the column header
+            // Get mark info from the column header using DataTables API
             var colIndex = $col.index();
-            var $markHeader = $('#selectionMatrix thead th').eq(colIndex).find('div');
+            var api = dataTable.api ? dataTable : $('#selectionMatrix').DataTable();
+            var $markHeader = $(api.column(colIndex).header()).find('div');
+            
+            // Проверяем, что заголовок найден и имеет данные
+            if (!$markHeader.length || !$markHeader.data('mark-id')) {
+                console.warn(`No valid mark header found for column ${colIndex}`);
+                return; // Пропускаем эту итерацию
+            }
+            
             var markId = $markHeader.data('mark-id');
             var markName = $markHeader.data('mark-name');
-            var markNumber = $markHeader.data('mark-number');
+            var markNumber = $markHeader.data('mark-number') || '';
         
             // Check if this object was previously deleted
             var wasObjectDeleted = false;
@@ -356,7 +390,9 @@ $(document).ready(function () {
     function loadProjectInfo(projectId) {
         return new Promise((resolve, reject) => {
             $.getJSON(`/get/projects/${projectId}`, function (project) {
-                $('#projectName').val(project.fieldValueMap.name);
+                $('#projectName').val(`Название проекта: ${project.fieldValueMap.name}`);
+                $('#projectCode').val(`Номер проекта: ${project.fieldValueMap.project_code_auto}`);
+                $('#projectChief').val(`ГИП: ${project.fieldValueMap.chief_project_engineer.fieldValueMap.name}`);
                 projects = project; // Сохраняем для дальнейшего использования
                 resolve(project);
             }).fail(function (jqXHR, textStatus, errorThrown) {
@@ -543,6 +579,9 @@ $(document).ready(function () {
                 snapX: true,
             },
             select: false,
+            scrollY: 'calc(100vh - 200px)',
+            scrollCollapse: true,
+            paging: false,
             drawCallback: function() {
                 reattachEventHandlers();
             }
@@ -670,6 +709,9 @@ $(document).ready(function () {
                         snapX: true,
                     },
                     select: false,
+                    scrollY: 'calc(100vh - 200px)',
+                    scrollCollapse: true,
+                    paging: false,
                     drawCallback: function() {
                         // After table is drawn, check the appropriate checkboxes
                         tableData.forEach((row, rowIdx) => {
@@ -746,6 +788,9 @@ $(document).ready(function () {
                 snapX: true,
             },
             select: false,
+            scrollY: 'calc(100vh - 200px)',
+            scrollCollapse: true,
+            paging: false,
             drawCallback: function(settings) {
                 var api = this.api();
                 
@@ -939,30 +984,36 @@ $(document).ready(function () {
             var currentData = dataTable.data().toArray();
             var duplicatesFound = false;
             
-            // Получаем все текущие заголовки с их markId и markNumber
+            // Получаем все текущие заголовки с их markId и markNumber используя DataTables API
             var existingHeaders = [];
-            $('#selectionMatrix thead th').each(function() {
-                var $div = $(this).find('div');
-                if ($div.length) {
-                    existingHeaders.push({
-                        markId: $div.data('mark-id'),
-                        markNumber: $div.data('mark-number'),
-                        text: $div.text()
-                    });
-                }
-            });
-
-            // Проверяем каждую выбранную марку на дубликаты
+            var api = dataTable.api ? dataTable : $('#selectionMatrix').DataTable();
+            
             selectedMarkOptions.each(function() {
                 var markId = $(this).val();
                 var markName = $(this).text();
-                var markNumber = markNumbers[0];
+                var markNumber = markNumbers.length > 0 ? (markNumbers[0] || '') : '';
                 
-                // Проверяем на дубликаты
-                var duplicate = existingHeaders.find(function(header) {
-                    var sameId = header.markId === markId;
-                    var sameNumber = (markNumber.toString() === header.markNumber.toString());
-                    return sameId && sameNumber;
+                var duplicate = false;
+                
+                // Проходим по всем столбцам (кроме первого) используя DataTables API
+                api.columns().every(function(index) {
+                    if (index === 0) return; // Пропускаем первый столбец
+                    
+                    var $header = $(this.header());
+                    var $div = $header.find('div');
+                    
+                    if ($div.length) {
+                        var headerMarkId = $div.data('mark-id');
+                        var headerNumber = $div.data('mark-number') || '';
+                        
+                        var sameId = headerMarkId === markId;
+                        var sameNumber = headerNumber === markNumber;
+                        
+                        if (sameId && sameNumber) {
+                            duplicate = true;
+                            return false; // Прерываем цикл columns
+                        }
+                    }
                 });
 
                 if (duplicate) {
@@ -971,7 +1022,7 @@ $(document).ready(function () {
                         `Марка "${markName}" с номером раздела "${markNumber}" уже существует в таблице` :
                         `Марка "${markName}" без номера раздела уже существует в таблице`;
                     showAlert(message, 'warning');
-                    return false; // Прерываем цикл
+                    return false; // Прерываем цикл selectedMarkOptions
                 }
             });
 
@@ -988,7 +1039,7 @@ $(document).ready(function () {
                 selectedMarkOptions.each(function() {
                     var markId = $(this).val();
                     var markName = $(this).text();
-                    var markNumber = markNumbers[0];
+                    var markNumber = markNumbers.length > 0 ? (markNumbers[0] || '') : ''; // Безопасное получение
                     
                     currentColumns.push({
                         title: `<div data-mark-id="${markId}" data-mark-name="${markName}" data-mark-number="${markNumber}">${markName}${markNumber}</div>`,
@@ -1006,51 +1057,6 @@ $(document).ready(function () {
             }
         }
     });
-
-    // 5.4 Selection Handlers
-    // $('#selectionMatrix tbody').on('click', 'td.select-cell', function(e) {
-    //     e.stopPropagation(); // Prevent event bubbling
-    //     var row = $(this).closest('tr');
-    //     var rowIdx = dataTable.row(row).index();
-        
-    //     row.toggleClass('selected');
-        
-    //     if (row.hasClass('selected')) {
-    //         if (!selectedRows.includes(rowIdx)) {
-    //             selectedRows.push(rowIdx);
-    //         }
-    //     } else {
-    //         selectedRows = selectedRows.filter(idx => idx !== rowIdx);
-    //     }
-
-    //     console.log("Selected rows:", selectedRows);
-
-    //     updateDeleteButtonState();
-    // });
-    
-    // $('#selectionMatrix thead').on('click', 'th:not(:first-child)', function(e) {
-    //     e.stopPropagation(); // Prevent event bubbling
-    //     var colIdx = $(this).index();
-    //     $(this).toggleClass('selected');
-        
-    //     // Highlight entire column
-    //     var column = dataTable.column(colIdx);
-    //     column.nodes().each(function() {
-    //         $(this).toggleClass('column-selected');
-    //     });
-        
-    //     if ($(this).hasClass('selected')) {
-    //         if (!selectedColumns.includes(colIdx)) {
-    //             selectedColumns.push(colIdx);
-    //         }
-    //     } else {
-    //         selectedColumns = selectedColumns.filter(idx => idx !== colIdx);
-    //     }
-
-    //     console.log("Selected columns:", selectedColumns);
-        
-    //     updateDeleteButtonState();
-    // });
 
     // 5.5 Delete Handlers
     $('#deleteButton').on('click', function() {
@@ -1201,25 +1207,33 @@ $(document).ready(function () {
                     masterState[objectId] = {};
                 }
                 
-                // Для каждого объекта проверяем все марки
-                $('#selectionMatrix thead th').each(function(colIdx) {
-                    if (colIdx === 0) return; // Skip first column
+                // Используем DataTables API для получения заголовков
+                var api = dataTable.api ? dataTable : $('#selectionMatrix').DataTable();
+                
+                // Проходим по всем ячейкам строки (кроме первой)
+                $(this).find('td:not(:first-child)').each(function(cellIdx) {
+                    var colIdx = $(this).index(); // Реальный индекс колонки в DOM
                     
-                    var $div = $(this).find('div');
-                    if (!$div.length) return;
+                    // Получаем заголовок через DataTables API
+                    var $header = $(api.column(colIdx).header());
+                    var $div = $header.find('div');
                     
-                    var markId = $div.data('mark-id');
-                    var markNumber = $div.data('mark-number') || '';
-                    var markKey = markId + '_' + markNumber;
-                    
-                    // Проверяем состояние чекбокса для данной комбинации объект-марка
-                    var $cell = $($('#selectionMatrix tbody tr').get($objectDiv.closest('tr').index()))
-                                .find('td').eq(colIdx);
-                    var $checkbox = $cell.find('input[type="checkbox"]');
-                    var isChecked = $checkbox.length ? $checkbox[0].checked : false;
-                    
-                    // Сохраняем состояние в мастер-объект
-                    masterState[objectId][markKey] = isChecked;
+                    if ($div.length) {
+                        var markId = $div.data('mark-id');
+                        var markNumber = $div.data('mark-number') || '';
+                        var markKey = markId + '_' + markNumber;
+                        
+                        // Проверяем состояние чекбокса
+                        var $checkbox = $(this).find('input[type="checkbox"]');
+                        var isChecked = $checkbox.length ? $checkbox[0].checked : false;
+                        
+                        // Сохраняем состояние в мастер-объект
+                        masterState[objectId][markKey] = isChecked;
+                        
+                        console.log(`Initialized state for object ${objectId}, mark ${markKey}: ${isChecked}`);
+                    } else {
+                        console.warn(`No div found in header for column ${colIdx}`);
+                    }
                 });
             });
             
@@ -1249,19 +1263,27 @@ $(document).ready(function () {
             var $objectDiv = $row.find('td:first-child div');
             var objectId = $objectDiv.data('object-id');
             
-            var $markHeader = $('#selectionMatrix thead th').eq(colIdx).find('div');
-            var markId = $markHeader.data('mark-id');
-            var markNumber = $markHeader.data('mark-number') || '';
-            var markKey = markId + '_' + markNumber;
+            // Используем DataTables API для получения заголовка
+            var api = dataTable.api ? dataTable : $('#selectionMatrix').DataTable();
+            var $header = $(api.column(colIdx).header());
+            var $div = $header.find('div');
             
-            updateMasterState(objectId, markKey, isChecked);
+            if ($div.length) {
+                var markId = $div.data('mark-id');
+                var markNumber = $div.data('mark-number') || '';
+                var markKey = markId + '_' + markNumber;
+                
+                updateMasterState(objectId, markKey, isChecked);
+            } else {
+                console.warn(`No div found in header for column ${colIdx} when updating state`);
+            }
         });
         
         // Функция для восстановления всех чекбоксов из мастер-состояния
         function restoreAllCheckboxes() {
             console.log("Restoring all checkboxes from master state");
             
-            // 1. Сначала убеждаемся, что все чекбоксы существуют
+            // 1. Убеждаемся, что все чекбоксы существуют
             $('#selectionMatrix tbody tr').each(function() {
                 $(this).find('td:not(:first-child)').each(function() {
                     if (!$(this).find('input[type="checkbox"]').length) {
@@ -1271,32 +1293,36 @@ $(document).ready(function () {
             });
             
             // 2. Восстанавливаем состояния из мастер-объекта
+            var api = dataTable.api ? dataTable : $('#selectionMatrix').DataTable();
+            
             $('#selectionMatrix tbody tr').each(function() {
                 var $objectDiv = $(this).find('td:first-child div');
                 var objectId = $objectDiv.data('object-id');
                 
                 if (!objectId || !masterState[objectId]) return;
                 
-                // Для каждого объекта проверяем все марки
-                $('#selectionMatrix thead th').each(function(colIdx) {
-                    if (colIdx === 0) return; // Пропускаем первый столбец
+                // Проходим по всем ячейкам строки (кроме первой)
+                $(this).find('td:not(:first-child)').each(function() {
+                    var colIdx = $(this).index(); // Реальный индекс колонки в DOM
                     
-                    var $div = $(this).find('div');
-                    if (!$div.length) return;
+                    // Получаем заголовок через DataTables API
+                    var $header = $(api.column(colIdx).header());
+                    var $div = $header.find('div');
                     
-                    var markId = $div.data('mark-id');
-                    var markNumber = $div.data('mark-number') || '';
-                    var markKey = markId + '_' + markNumber;
-                    
-                    // Если для этой комбинации объект-марка есть сохраненное состояние
-                    if (masterState[objectId][markKey] !== undefined) {
-                        var $cell = $($('#selectionMatrix tbody tr').get($objectDiv.closest('tr').index()))
-                                    .find('td').eq(colIdx);
-                        var $checkbox = $cell.find('input[type="checkbox"]');
+                    if ($div.length) {
+                        var markId = $div.data('mark-id');
+                        var markNumber = $div.data('mark-number') || '';
+                        var markKey = markId + '_' + markNumber;
                         
-                        if ($checkbox.length) {
-                            // Устанавливаем состояние напрямую через DOM-свойство
-                            $checkbox[0].checked = masterState[objectId][markKey];
+                        // Если для этой комбинации объект-марка есть сохраненное состояние
+                        if (masterState[objectId][markKey] !== undefined) {
+                            var $checkbox = $(this).find('input[type="checkbox"]');
+                            
+                            if ($checkbox.length) {
+                                // Устанавливаем состояние напрямую через DOM-свойство
+                                $checkbox[0].checked = masterState[objectId][markKey];
+                                console.log(`Restored state for object ${objectId}, mark ${markKey}: ${masterState[objectId][markKey]}`);
+                            }
                         }
                     }
                 });
