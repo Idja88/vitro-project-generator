@@ -9,6 +9,8 @@
 * selection_matrix - данные в json формате
 * is_created_by_generator - флаг
 * project_company_id - уникальный идентификатор
+* project_code_auto - однострочный текст
+* chief_project_engineer - ссылка на элемент списка "Пользователи"
 
 ### Заказчик (Объекты проектирования)
 * company_customer_lookup - ссылка на элемент списка "Реестр компаний"
