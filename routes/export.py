@@ -55,17 +55,34 @@ def create_simple_excel(selection_matrix):
     # Получаем объекты (не удаленные)
     objects = [obj for obj in selection_matrix['objects'] if not obj.get('deleted', False)]
     
-    # Получаем все марки
+    # Получаем все уникальные марки (учитываем ID + номер)
     all_marks = {}
     for obj in objects:
         for mark in obj['marks']:
             if not mark.get('deleted', False):
                 mark_id = mark['id']
-                all_marks[mark_id] = mark['name']
+                mark_number = mark['number']
+                mark_name = mark['name']
+                
+                # Создаем уникальный ключ: mark_id + mark_number
+                mark_key = f"{mark_id}_{mark_number}"
+                
+                # Формируем отображаемое имя марки
+                if mark_number:
+                    display_name = f"{mark_name}{mark_number}"
+                else:
+                    display_name = mark_name
+                
+                all_marks[mark_key] = {
+                    'id': mark_id,
+                    'number': mark_number,
+                    'name': mark_name,
+                    'display_name': display_name
+                }
     
     # Заголовки
-    headers = ['Объект'] + list(all_marks.values())
-    mark_ids = list(all_marks.keys())
+    headers = ['Объект'] + [mark_info['display_name'] for mark_info in all_marks.values()]
+    mark_keys = list(all_marks.keys())
     
     # Записываем заголовки
     for col, header in enumerate(headers, 1):
@@ -77,9 +94,17 @@ def create_simple_excel(selection_matrix):
         ws.cell(row=row_idx, column=1, value=obj['name'])
         
         # Проверяем каждую марку
-        for col_idx, mark_id in enumerate(mark_ids, 2):
-            has_mark = any(mark['id'] == mark_id and not mark.get('deleted', False) 
-                          for mark in obj['marks'])
+        for col_idx, mark_key in enumerate(mark_keys, 2):
+            mark_info = all_marks[mark_key]
+            
+            # Ищем точное совпадение по ID и номеру
+            has_mark = any(
+                mark['id'] == mark_info['id'] and 
+                mark.get('number', '') == mark_info['number'] and 
+                not mark.get('deleted', False)
+                for mark in obj['marks']
+            )
+            
             ws.cell(row=row_idx, column=col_idx, value='True' if has_mark else 'False')
     
     # Сохранение
