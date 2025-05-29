@@ -985,35 +985,46 @@ $(document).ready(function () {
             var duplicatesFound = false;
             
             // Получаем все текущие заголовки с их markId и markNumber используя DataTables API
-            var existingHeaders = [];
             var api = dataTable.api ? dataTable : $('#selectionMatrix').DataTable();
+            var existingHeaders = [];
             
+            // Сначала собираем все существующие заголовки
+            api.columns().every(function(index) {
+                if (index === 0) return; // Пропускаем первый столбец
+                
+                var $header = $(this.header());
+                var $div = $header.find('div');
+                
+                if ($div.length) {
+                    existingHeaders.push({
+                        markId: $div.data('mark-id'),
+                        markNumber: String($div.data('mark-number') || ''), // Приводим к строке
+                        columnIndex: index
+                    });
+                }
+            });
+
+            console.log("Existing headers:", existingHeaders);
+            
+            // Проверяем каждую выбранную марку на дубликаты
             selectedMarkOptions.each(function() {
+                if (duplicatesFound) return false; // Прерываем если уже найден дубликат
+                
                 var markId = $(this).val();
                 var markName = $(this).text();
-                var markNumber = markNumbers.length > 0 ? (markNumbers[0] || '') : '';
+                var markNumber = String(markNumbers.length > 0 ? (markNumbers[0] || '') : ''); // Приводим к строке
                 
-                var duplicate = false;
+                console.log(`Checking mark: markId=${markId}, markName=${markName}, markNumber="${markNumber}"`);
                 
-                // Проходим по всем столбцам (кроме первого) используя DataTables API
-                api.columns().every(function(index) {
-                    if (index === 0) return; // Пропускаем первый столбец
+                // Ищем дубликат среди существующих заголовков
+                var duplicate = existingHeaders.find(function(header) {
+                    var sameId = header.markId === markId;
+                    var sameNumber = header.markNumber === markNumber;
                     
-                    var $header = $(this.header());
-                    var $div = $header.find('div');
+                    console.log(`Comparing with existing: headerMarkId=${header.markId}, headerNumber="${header.markNumber}"`);
+                    console.log(`sameId=${sameId}, sameNumber=${sameNumber}`);
                     
-                    if ($div.length) {
-                        var headerMarkId = $div.data('mark-id');
-                        var headerNumber = $div.data('mark-number') || '';
-                        
-                        var sameId = headerMarkId === markId;
-                        var sameNumber = headerNumber === markNumber;
-                        
-                        if (sameId && sameNumber) {
-                            duplicate = true;
-                            return false; // Прерываем цикл columns
-                        }
-                    }
+                    return sameId && sameNumber;
                 });
 
                 if (duplicate) {
