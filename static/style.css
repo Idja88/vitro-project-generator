@@ -25,26 +25,9 @@ body {
 
 /* Стили выделения */
 .selected,
-.column-selected,
-#selectionMatrix tbody tr.selected,
-#selectionMatrix thead th.selected {
+.column-selected {
     background-color: #cfe2ff !important;
     border-color: #9ec5fe !important;
-}
-
-#selectionMatrix thead th:first-child {
-    cursor: default;
-}
-
-#selectionMatrix thead th:not(:first-child) {
-    cursor: pointer;
-}
-
-/* Эффекты наведения */
-#selectionMatrix thead th:not(:first-child):hover,
-#selectionMatrix tbody td.select-cell:hover {
-    background-color: #e7f1ff !important;
-    cursor: pointer;
 }
 
 /* Предотвращение выделения ячеек с чекбоксами */
@@ -80,4 +63,42 @@ body {
     align-items: center;
     height: 100%;
     width: 100%;
+}
+
+/* Универсальные селекторы для любых таблиц DataTable */
+.dataTable thead th:not(:first-child),
+table.dataTable thead th:not(:first-child) {
+    cursor: pointer !important;
+}
+
+.dataTable thead th:not(:first-child):hover,
+table.dataTable thead th:not(:first-child):hover {
+    background-color: #e7f1ff !important;
+    cursor: pointer !important;
+}
+
+.dataTable thead th:first-child,
+table.dataTable thead th:first-child {
+    cursor: default !important;
+}
+
+/* Выделение для DataTable */
+.dataTable thead th.selected,
+.dataTable tbody tr.selected,
+table.dataTable thead th.selected,
+table.dataTable tbody tr.selected {
+    background-color: #cfe2ff !important;
+    border-color: #9ec5fe !important;
+}
+
+.dataTable .column-selected,
+table.dataTable .column-selected {
+    background-color: #cfe2ff !important;
+    border-color: #9ec5fe !important;
+}
+
+/* Эффекты наведения для ячеек тела таблицы */
+#selectionMatrix tbody td.select-cell:hover {
+    background-color: #e7f1ff !important;
+    cursor: pointer;
 }
