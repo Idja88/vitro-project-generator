@@ -70,7 +70,7 @@
                     <div class="modal-body">
                         <div class="form-group">
                             <div class="dropdown">
-                                <label for="objectDropdown">Выберите объекты проектирования:</label>
+                                <label for="objectDropdown">Объекты проектирования:</label>
                                 <select class="form-control" id="objectDropdown" multiple></select>
                             </div>
                         </div>
@@ -96,23 +96,16 @@
                     <div class="modal-body">
                         <div class="form-group">
                             <div class="dropdown">
-                                <label for="markDropdown">Выберите марки:</label>
+                                <label for="markDropdown">Марка раздела:</label>
                                 <select id="markDropdown" class="form-control"></select>
                             </div>
-                            <label for="markNumberDropdown">Номер раздела:</label>
-                            <select class="form-control" id="markNumberDropdown">
-                                <option></option>
-                                <option>1</option>
-                                <option>2</option>
-                                <option>3</option>
-                                <option>4</option>
-                                <option>5</option>
-                                <option>6</option>
-                                <option>7</option>
-                                <option>8</option>
-                                <option>9</option>
-                                <option>10</option>
-                            </select>
+                            <label for="markNumberDropdown" class="mt-3">Номер раздела:</label>
+                            <input type="number" class="form-control" id="markNumberDropdown" 
+                                   min="1" max="99" step="1">
+                            <div class="invalid-feedback">
+                                Введите число от 1 до 99
+                            </div>
+                            <small class="form-text text-muted">Оставьте пустым, если номер раздела не требуется</small>
                         </div>
                     </div>
                     <div class="modal-footer">

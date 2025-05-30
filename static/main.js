@@ -986,12 +986,65 @@ $(document).ready(function () {
         }
     });
 
+    // Упрощенная функция проверки валидности
+    function updateAddColumnButtonState() {
+        var markSelected = $('#markDropdown option:selected');
+        var numberValue = $('#markNumberDropdown').val().trim();
+        var numberValid = true;
+        
+        // Проверяем валидность номера если он введен
+        if (numberValue !== '') {
+            // Регулярное выражение для чисел от 1 до 99 без ведущих нулей
+            numberValid = /^[1-9]\d*$/.test(numberValue) && parseInt(numberValue) <= 99;
+        }
+        
+        // Кнопка активна только если выбрана марка И номер валиден (или пуст)
+        var formValid = markSelected && numberValid;
+        $('#addColumnConfirm').prop('disabled', !formValid);
+        
+        console.log(`Form validation: markSelected=${markSelected}, numberValid=${numberValid}, formValid=${formValid}`);
+    }
+        
+    // Валидация dropdown марок
+    $('#markNumberDropdown').on('change', function() {
+        updateAddColumnButtonState();
+    });
+
+    // Валидация input номера раздела с регулярным выражением
+    $('#markNumberDropdown').on('input keyup paste', function() {
+        var value = $(this).val().trim();
+        
+        // Удаляем предыдущие классы валидации
+        $(this).removeClass('is-valid is-invalid');
+
+        if (value === '') {
+            // Пустое значение допустимо
+        }
+        else if (!/^[1-9]\d*$/.test(value) && parseInt(value) <= 99) {
+            // Регулярное выражение: начинается с 1-9, затем любые цифры
+            // Плюс проверка на максимум 99
+            $(this).addClass('is-invalid');
+        }
+        
+        // Обновляем состояние кнопки
+        updateAddColumnButtonState();
+    });
+
+    // Сброс значений при закрытии модала
+    $('#addColumnModal').on('hidden.bs.modal', function () {
+        // Сбрасываем dropdown марок
+        //$('#markDropdown').val('');
+        
+        // Сбрасываем input номера раздела
+        $('#markNumberDropdown').val('');
+        
+        // Убираем классы валидации
+        $('#markNumberDropdown').removeClass('is-valid is-invalid');
+    });
+    
     $('#addColumnConfirm').on('click', function() {
         var selectedMarkOptions = $('#markDropdown option:selected');
-        var selectedMarkNumberOptions = $('#markNumberDropdown option:selected');
-        var markNumbers = selectedMarkNumberOptions.map(function() {
-            return $(this).val();
-        }).get();
+        var markNumbers = $('#markNumberDropdown').val();
 
         if (selectedMarkOptions.length > 0) {        
             var checkboxStates = getCheckboxStates();
@@ -1026,7 +1079,7 @@ $(document).ready(function () {
                 
                 var markId = $(this).val();
                 var markName = $(this).text();
-                var markNumber = String(markNumbers.length > 0 ? (markNumbers[0] || '') : ''); // Приводим к строке
+                var markNumber = String(markNumbers.length > 0 ? (markNumbers || '') : ''); // Приводим к строке
                 
                 console.log(`Checking mark: markId=${markId}, markName=${markName}, markNumber="${markNumber}"`);
                 
@@ -1064,7 +1117,7 @@ $(document).ready(function () {
                 selectedMarkOptions.each(function() {
                     var markId = $(this).val();
                     var markName = $(this).text();
-                    var markNumber = markNumbers.length > 0 ? (markNumbers[0] || '') : ''; // Безопасное получение
+                    var markNumber = markNumbers.length > 0 ? (markNumbers || '') : ''; // Безопасное получение
                     
                     currentColumns.push({
                         title: `<div data-mark-id="${markId}" data-mark-name="${markName}" data-mark-number="${markNumber}">${markName}${markNumber}</div>`,
