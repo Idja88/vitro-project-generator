@@ -420,7 +420,14 @@ $(document).ready(function () {
             $.getJSON(`/get/objects/${customerId}`, function (objectsData) {
                 var dropdown = $('#objectDropdown');
                 dropdown.empty();
-                
+
+                // Сортируем объекты по имени перед сохранением и добавлением в dropdown
+                objectsData.sort(function(a, b) {
+                    var nameA = a.fieldValueMap.name.toLowerCase();
+                    var nameB = b.fieldValueMap.name.toLowerCase();
+                    return nameA.localeCompare(nameB, "ru", {numeric: true, sensitivity: 'base', ignorePunctuation: true});
+                });
+                    
                 objects = objectsData; // Сохраняем для дальнейшего использования
 
                 // Add "Общий объект" as first option
@@ -449,6 +456,13 @@ $(document).ready(function () {
             $.getJSON('/get/marks', function (marksData) {
                 var dropdown = $('#markDropdown');
                 dropdown.empty();
+
+                // Сортируем объекты по имени перед сохранением и добавлением в dropdown
+                marksData.sort(function(a, b) {
+                    var nameA = a.fieldValueMap.name.toLowerCase();
+                    var nameB = b.fieldValueMap.name.toLowerCase();
+                    return nameA.localeCompare(nameB, "ru", {numeric: true, sensitivity: 'base', ignorePunctuation: true});
+                });
                 
                 marks = marksData; // Сохраняем для дальнейшего использования
                 
