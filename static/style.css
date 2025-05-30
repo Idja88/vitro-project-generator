@@ -1,62 +1,49 @@
+/* Переменные DataTables */
+:root {
+    --dt-row-selected: 207, 226, 255 !important; /* #cfe2ff в RGB */
+    --dt-row-selected-text: 33, 37, 41 !important;
+    --dt-row-hover: 231, 241, 255 !important; /* #e7f1ff в RGB */
+}
+
+/* Основные стили */
 body {
     background-color: #F6F8FC;
 }
 
-/* Основные стили таблицы */
 .table-responsive {
     margin-top: 20px;
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.1), 0 6px 20px 0 rgba(0, 0, 0, 0.1); /* Добавлена тень */
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.1), 0 6px 20px 0 rgba(0, 0, 0, 0.1);
 }
 
 /* Стили для кнопок */
-#newRowButton, #newColumnButton, #deleteButton, #createProjectButton {
-    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1), 0 3px 10px 0 rgba(0, 0, 0, 0.1); /* Добавлена тень */
+#newRowButton, 
+#newColumnButton, 
+#deleteButton, 
+#createProjectButton {
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1), 0 3px 10px 0 rgba(0, 0, 0, 0.1);
 }
 
-/* Стили для модальных окон */
+/* Модальные окна */
 .modal-dialog {
     max-width: 500px;
 }
 
-/* Стили для множественного выбора в модальных окнах */
 .form-control[multiple] {
-    min-height: 120px;
+    min-height: 150px;
 }
 
-/* Стили выделения */
-.selected,
-.column-selected {
-    background-color: #cfe2ff !important;
-    border-color: #9ec5fe !important;
+/* Центрирование и выравнивание */
+.dt-center {
+    text-align: center !important;
+    vertical-align: middle !important;
 }
 
-/* Предотвращение выделения ячеек с чекбоксами */
-#selectionMatrix td:not(.select-cell) {
-    cursor: default;
-}
-
-#selectionMatrix tbody td.select-cell {
-    cursor: pointer;
-}
-
-.checkbox-cell {
-    cursor: default !important;
-}
-
-/* Центрирование чекбоксов в ячейках */
 .dt-center .form-check-input {
     position: relative;
     display: block;
     margin: 0 auto;
 }
 
-/* Выравнивание содержимого ячеек */
-.dt-center {
-    text-align: center !important;
-    vertical-align: middle !important;
-}
-
-/* Контейнер для чекбокса */
 .checkbox-container {
     display: flex;
     justify-content: center;
@@ -65,15 +52,9 @@ body {
     width: 100%;
 }
 
-/* Универсальные селекторы для любых таблиц DataTable */
+/* Курсоры для интерактивных элементов */
 .dataTable thead th:not(:first-child),
 table.dataTable thead th:not(:first-child) {
-    cursor: pointer !important;
-}
-
-.dataTable thead th:not(:first-child):hover,
-table.dataTable thead th:not(:first-child):hover {
-    background-color: #e7f1ff !important;
     cursor: pointer !important;
 }
 
@@ -82,23 +63,35 @@ table.dataTable thead th:first-child {
     cursor: default !important;
 }
 
-/* Выделение для DataTable */
+#selectionMatrix td:not(.select-cell),
+.checkbox-cell {
+    cursor: default !important;
+}
+
+#selectionMatrix tbody td.select-cell {
+    cursor: pointer;
+}
+
+/* Объединенные стили выделения */
+.selected,
+.column-selected,
 .dataTable thead th.selected,
 .dataTable tbody tr.selected,
+.dataTable tbody tr.selected td,
+.dataTable tbody td.column-selected,
 table.dataTable thead th.selected,
-table.dataTable tbody tr.selected {
+table.dataTable tbody tr.selected,
+table.dataTable tbody tr.selected td,
+table.dataTable tbody td.column-selected {
     background-color: #cfe2ff !important;
+    background-image: none !important;
     border-color: #9ec5fe !important;
 }
 
-.dataTable .column-selected,
-table.dataTable .column-selected {
-    background-color: #cfe2ff !important;
-    border-color: #9ec5fe !important;
-}
-
-/* Эффекты наведения для ячеек тела таблицы */
+/* Объединенные эффекты наведения */
+.dataTable thead th:not(:first-child):hover,
+table.dataTable thead th:not(:first-child):hover,
 #selectionMatrix tbody td.select-cell:hover {
     background-color: #e7f1ff !important;
-    cursor: pointer;
+    cursor: pointer !important;
 }
