@@ -1345,7 +1345,7 @@ $(document).ready(function () {
             $('#createProjectBtn').prop('disabled', true)
 
             // Show success alert
-            showAlert(`Cтруктура проекта "${response.matrix.name}" успешно создана! Перейти в структуру хранения Vitro-CAD?`, 'success', response.project_link);
+            showAlert(`Cтруктура проекта "${response.matrix.name}" создана/обновлена, перейти в систему хранения Vitro-CAD?`, 'success', response.project_link);
         })
         .catch(error => {
             // Восстанавливаем кнопку
