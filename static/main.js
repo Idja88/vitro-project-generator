@@ -15,6 +15,37 @@ $(document).ready(function () {
         }
     });
 
+    // Функция для безопасного формирования ссылок
+    function buildListUrl(listId) {
+        if (!APP_CONFIG.VITRO_CAD_API_BASE_URL || !listId) {
+            console.warn('Missing configuration for list URL:', {
+                baseUrl: APP_CONFIG.VITRO_CAD_API_BASE_URL,
+                listId: listId
+            });
+            return null;
+        }
+        return `${APP_CONFIG.VITRO_CAD_API_BASE_URL}/list/${listId}`;
+    }
+    
+    // Обновляем ссылки и скрываем кнопки если ссылок нет
+    function updateNavigationLinks() {
+        // Ссылка для объектов
+        var objectListUrl = buildListUrl(APP_CONFIG.OBJECT_LIST_ID);
+        if (objectListUrl) {
+            $('#goToObjectBtn').attr('href', objectListUrl).show();
+        } else {
+            $('#goToObjectBtn').hide();
+        }
+        
+        // Ссылка для марок
+        var markListUrl = buildListUrl(APP_CONFIG.MARK_LIST_ID);
+        if (markListUrl) {
+            $('#goToMarkBtn').attr('href', markListUrl).show();
+        } else {
+            $('#goToMarkBtn').hide();
+        }
+    }
+
     // 2. Utility Functions
     function getCheckboxStates() {
         var states = [];
@@ -857,13 +888,13 @@ $(document).ready(function () {
 
         // Reset button states
         updateDeleteButtonState();
-        
+        // Return the new DataTable instance
         return dataTable;
     }
 
     // 4. Initialization of table data and project info
-    if (PROJECT_ID) {
-        loadProjectInfo(PROJECT_ID)
+    if (APP_CONFIG.PROJECT_ID) {
+        loadProjectInfo(APP_CONFIG.PROJECT_ID)
             .then(project => {
                 // Check if project was already generated
                 if (project.fieldValueMap.is_created_by_generator === true) {
@@ -871,12 +902,14 @@ $(document).ready(function () {
                     $('#confirmCreateProject').text('Обновить');
                     initializeEmptyTable();
                     initializeTable(project.fieldValueMap.selection_matrix);
+                    updateNavigationLinks();
                 }
 
                 // If not genereated, initialize empty table
                 if (project.fieldValueMap.is_created_by_generator === false) {
                     $('#createProjectBtn').text('Создать').prop('disabled', false);
                     initializeEmptyTable();
+                    updateNavigationLinks();
                 }
             })
             .catch(error => {

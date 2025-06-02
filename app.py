@@ -30,8 +30,14 @@ def create_app():
     @app.context_processor
     def inject_globals():
         prefix = os.getenv('PREFIX', '')
+        object_list_id = os.getenv('OBJECT_LIST_ID', '')
+        mark_list_id = os.getenv('MARK_LIST_ID', '')
+        vitro_cad_api_base_url = os.getenv('VITRO_CAD_API_BASE_URL', '')
         return {
-            'app_prefix': prefix
+            'app_prefix': prefix,
+            'object_list_id': object_list_id,
+            'mark_list_id': mark_list_id,
+            'vitro_cad_api_base_url': vitro_cad_api_base_url
         }
 
     # Регистрируем Blueprints
