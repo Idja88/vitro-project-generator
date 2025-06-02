@@ -72,17 +72,21 @@ $(document).ready(function () {
             var row = $(this).closest('tr');
             var rowIdx = dataTable.row(row).index();
             
-            row.toggleClass('selected');
-            
-            if (row.hasClass('selected')) {
-                if (!selectedRows.includes(rowIdx)) {
-                    selectedRows.push(rowIdx);
-                }
-            } else {
+            // Переключаем выделение строки
+            if (selectedRows.includes(rowIdx)) {
+                // Снимаем выделение
                 selectedRows = selectedRows.filter(idx => idx !== rowIdx);
+                row.removeClass('selected');
+                row.find('td').removeClass('selected');
+            } else {
+                // Добавляем выделение
+                selectedRows.push(rowIdx);
+                row.addClass('selected');
+                row.find('td').addClass('selected');
             }
             
             updateDeleteButtonState();
+            console.log(`Row ${rowIdx} selection toggled. Current selected rows:`, selectedRows);
         });
 
         // Обработчик выделения столбцов через DataTables API
@@ -1261,9 +1265,8 @@ $(document).ready(function () {
         });
     });
 
-    // Добавьте эту функцию сразу после инициализации таблицы в любом месте 
+    // Добавьте в attachTableEventHandlers() обработчик для rowReorder
     function attachTableEventHandlers() {
-        // Удаляем существующие обработчики
         dataTable.off('.dt');
         
         // Мастер-объект для хранения состояний чекбоксов по ID объекта и ID марки
@@ -1432,17 +1435,66 @@ $(document).ready(function () {
             }, 100);
         });
         
-        // При перемещении строк
-        dataTable.on('row-reordered', function() {
-            console.log("Row reordered - restoring all checkboxes");
+        // Обработчик для перетаскивания строк в attachTableEventHandlers()
+        dataTable.on('row-reorder', function(e, diff, edit) {
+            console.log('Row reorder event triggered', diff);
             
-            // Даем небольшую задержку для обновления DOM
-            setTimeout(function() {
-               restoreAllCheckboxes();
+            // Сохраняем текущее состояние чекбоксов перед изменением
+            var checkboxStates = getCheckboxStates();
+            
+            // Обновляем индексы выделенных строк
+            var newSelectedRows = [];
+            selectedRows.forEach(function(oldRowIndex) {
+                var newIndex = oldRowIndex;
                 
-                // Перепривязываем обработчики
-               reattachEventHandlers();
-            }, 100);
+                // Проверяем каждое изменение в diff
+                diff.forEach(function(change) {
+                    var fromPos = change.oldPosition;
+                    var toPos = change.newPosition;
+                    
+                    if (oldRowIndex === fromPos) {
+                        // Перемещенная строка получает новый индекс
+                        newIndex = toPos;
+                    } else if (fromPos < oldRowIndex && toPos >= oldRowIndex) {
+                        // Строка сдвигается вверх
+                        newIndex = oldRowIndex - 1;
+                    } else if (fromPos > oldRowIndex && toPos <= oldRowIndex) {
+                        // Строка сдвигается вниз
+                        newIndex = oldRowIndex + 1;
+                    }
+                });
+                
+                newSelectedRows.push(newIndex);
+            });
+            
+            // Обновляем массив выделенных строк
+            selectedRows = newSelectedRows;
+            
+            // Восстанавливаем состояние чекбоксов с минимальной задержкой
+            setTimeout(function() {
+                restoreAllCheckboxes();
+                updateRowSelection(); // Обновляем визуальное выделение строк
+                updateDeleteButtonState();
+                reattachEventHandlers();
+            }, 25); // Уменьшена задержка до 25ms
         });
+    }
+
+    // Обновленная функция для визуального выделения строк
+    function updateRowSelection() {
+        // Сначала убираем ВСЕ выделения со всех строк
+        $('#selectionMatrix tbody tr').removeClass('selected');
+        $('#selectionMatrix tbody tr td').removeClass('selected');
+        
+        // Применяем выделение только к актуальным строкам
+        selectedRows.forEach(function(rowIndex) {
+            var $row = $('#selectionMatrix tbody tr').eq(rowIndex);
+            if ($row.length) {
+                $row.addClass('selected');
+                $row.find('td').addClass('selected');
+            }
+        });
+        
+        console.log(`Updated row selection for indices: ${selectedRows}`);
     }
 });
