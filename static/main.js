@@ -1054,8 +1054,10 @@ $(document).ready(function () {
             return;
         }
         
-        // Запрещаем все, кроме цифр (включая символы +, -, и другие)
-        if (key < 48 || key > 57) {
+        // Запрещаем все, кроме цифр (включая numpad)
+        // Основная клавиатура: 48-57 (0-9)
+        // Numpad: 96-105 (0-9)
+        if (!((key >= 48 && key <= 57) || (key >= 96 && key <= 105))) {
             e.preventDefault();
             return;
         }
@@ -1066,8 +1068,8 @@ $(document).ready(function () {
             return;
         }
         
-        // Не разрешаем ввод нуля в начале
-        if (currentValue === '' && key === 48) {
+        // Не разрешаем ввод нуля в начале (как с основной клавиатуры, так и с numpad)
+        if (currentValue === '' && (key === 48 || key === 96)) { // 48 - '0' на основной клавиатуре, 96 - '0' на numpad
             e.preventDefault();
             return;
         }
