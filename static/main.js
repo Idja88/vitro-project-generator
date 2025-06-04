@@ -1023,88 +1023,13 @@ $(document).ready(function () {
         }
     });
 
-    // Обновленная валидация input номера раздела
-    $('#markNumberDropdown').on('input keyup paste', function() {
-        var value = $(this).val().trim();
-        
-        // Удаляем предыдущие классы валидации
-        $(this).removeClass('is-valid is-invalid');
-
-        if (value === '') {
-            // Пустое значение допустимо
-        } else if (!/^[1-9]\d*$/.test(value) || parseInt(value) > 99) {
-            // Строгое регулярное выражение: ТОЛЬКО цифры от 1-9 в начале, затем только цифры
-            // Плюс проверка на максимум 99
-            $(this).addClass('is-invalid');
-        }
-        
-        // Обновляем состояние кнопки
-        updateAddColumnButtonState();
-    });
-
-    // Более строгий обработчик для блокировки некорректных символов
-    $('#markNumberDropdown').on('keydown', function(e) {
-        var currentValue = $(this).val();
-        var key = e.keyCode || e.which;
-        
-        // Разрешаем управляющие клавиши
-        if ([8, 9, 27, 13, 46, 37, 38, 39, 40].indexOf(key) !== -1 ||
-            // Разрешаем Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+Z
-            (e.ctrlKey && [65, 67, 86, 88, 90].indexOf(key) !== -1)) {
-            return;
-        }
-        
-        // Запрещаем все, кроме цифр (включая numpad)
-        // Основная клавиатура: 48-57 (0-9)
-        // Numpad: 96-105 (0-9)
-        if (!((key >= 48 && key <= 57) || (key >= 96 && key <= 105))) {
-            e.preventDefault();
-            return;
-        }
-        
-        // Дополнительная проверка: не разрешаем ввод, если уже есть 2 цифры
-        if (currentValue.length >= 2) {
-            e.preventDefault();
-            return;
-        }
-        
-        // Не разрешаем ввод нуля в начале (как с основной клавиатуры, так и с numpad)
-        if (currentValue === '' && (key === 48 || key === 96)) { // 48 - '0' на основной клавиатуре, 96 - '0' на numpad
-            e.preventDefault();
-            return;
-        }
-    });
-
-    // Обработчик для блокировки вставки некорректных значений
-    $('#markNumberDropdown').on('paste', function(e) {
-        // Предотвращаем стандартное поведение
-        e.preventDefault();
-        
-        // Получаем вставляемый текст
-        var pastedText = (e.originalEvent || e).clipboardData.getData('text/plain');
-        
-        // Проверяем, соответствует ли вставляемый текст нашим требованиям
-        if (/^[1-9]\d*$/.test(pastedText) && parseInt(pastedText) <= 99 && pastedText.length <= 2) {
-            $(this).val(pastedText);
-            $(this).trigger('input'); // Запускаем валидацию
-        }
-    });
-
-    // Дополнительная проверка при потере фокуса
-    $('#markNumberDropdown').on('blur', function() {
-        var value = $(this).val().trim();
-        
-        // Если значение не пустое, но некорректное - очищаем
-        if (value !== '' && (!/^[1-9]\d*$/.test(value) || parseInt(value) > 99 || parseInt(value) < 1)) {
-            $(this).val('');
-            $(this).removeClass('is-valid is-invalid');
-            updateAddColumnButtonState();
-        }
-    });
-
-    // Обновленная функция проверки валидности с более строгой проверкой
+    // Обновленная функция проверки валидности
     function updateAddColumnButtonState() {
-        var markSelected = $('#markDropdown option:selected').length > 0;
+        // Проверяем, что dropdown имеет опции и что-то выбрано
+        var markSelected = $('#markDropdown').val() !== null && 
+                          $('#markDropdown').val() !== '' && 
+                          $('#markDropdown option').length > 0;
+        
         var numberValue = $('#markNumberDropdown').val().trim();
         var numberValid = true;
         
@@ -1126,18 +1051,51 @@ $(document).ready(function () {
         console.log(`Form validation: markSelected=${markSelected}, numberValid=${numberValid}, formValid=${formValid}`);
     }
 
-    // Сброс значений при закрытии модала
-    $('#addColumnModal').on('hidden.bs.modal', function () {
-        // Сбрасываем dropdown марок
-        //$('#markDropdown').val('');
+    // Добавьте обработчик изменения dropdown марок
+    $('#markDropdown').on('change', function() {
+        updateAddColumnButtonState();
+    });
+
+    // Также обновите валидацию input номера раздела
+    $('#markNumberDropdown').on('input keyup paste', function() {
+        var value = $(this).val().trim();
         
+        // Удаляем предыдущие классы валидации
+        $(this).removeClass('is-valid is-invalid');
+
+        if (value === '') {
+            // Пустое значение допустимо
+        } else if (!/^[1-9]\d*$/.test(value) || parseInt(value) > 99) {
+            // Строгое регулярное выражение: ТОЛЬКО цифры от 1-9 в начале, затем только цифры
+            // Плюс проверка на максимум 99
+            $(this).addClass('is-invalid');
+        }
+
+        // Обновляем состояние кнопки
+        updateAddColumnButtonState();
+    });
+
+    // Обновите сброс значений при закрытии модала
+    $('#addColumnModal').on('hidden.bs.modal', function () {
         // Сбрасываем input номера раздела
         $('#markNumberDropdown').val('');
         
         // Убираем классы валидации
         $('#markNumberDropdown').removeClass('is-valid is-invalid');
+        
     });
     
+    // Также добавьте обработчик при открытии модала
+    $('#addColumnModal').on('show.bs.modal', function () {
+        // Принудительно делаем кнопку неактивной при открытии
+        $('#addColumnConfirm').prop('disabled', true);
+        
+        // Проверяем состояние после небольшой задержки (когда модал полностью открыт)
+        setTimeout(function() {
+            updateAddColumnButtonState();
+        }, 20);
+    });
+
     $('#addColumnConfirm').on('click', function() {
         var selectedMarkOptions = $('#markDropdown option:selected');
         var markNumbers = $('#markNumberDropdown').val();
