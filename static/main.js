@@ -158,6 +158,124 @@ $(document).ready(function () {
                 });
             });
         }
+
+        // Функция для подсветки строки и столбца
+        function highlightCrossHairs(targetCell) {
+            if (!targetCell || !targetCell.length) return;
+            
+            var $table = $('#selectionMatrix');
+            var cellIndex = targetCell.index();
+            var api = dataTable.api ? dataTable : $table.DataTable();
+            
+            // Убираем предыдущие подсветки
+            clearCrossHairs();
+            
+            // Подсвечиваем всю строку (включая первую ячейку)
+            targetCell.closest('tr').find('td').addClass('row-highlight');
+            
+            // Подсвечиваем весь столбец через DataTables API
+            if (cellIndex > 0) { // Только если это не первый столбец
+                // Получаем заголовок через API
+                var $header = $(api.column(cellIndex).header());
+                $header.addClass('column-highlight');
+                
+                // Подсвечиваем все ячейки столбца
+                api.column(cellIndex).nodes().each(function(cell) {
+                    $(cell).addClass('column-highlight');
+                });
+            }
+            
+            // Подсвечиваем текущую ячейку
+            targetCell.addClass('cell-highlight');
+        }
+
+        // Функция для подсветки только столбца (для заголовков)
+        function highlightColumn(columnIndex) {
+            if (columnIndex <= 0) return; // Не подсвечиваем первый столбец
+            
+            var api = dataTable.api ? dataTable : $('#selectionMatrix').DataTable();
+            
+            // Убираем предыдущие подсветки
+            clearCrossHairs();
+            
+            // Подсвечиваем заголовок через API
+            var $header = $(api.column(columnIndex).header());
+            $header.addClass('column-highlight cell-highlight');
+            
+            // Подсвечиваем весь столбец
+            api.column(columnIndex).nodes().each(function(cell) {
+                $(cell).addClass('column-highlight');
+            });
+        }
+
+        // Функция для удаления подсветки
+        function clearCrossHairs() {
+            var $table = $('#selectionMatrix');
+            
+            // Убираем классы со всех элементов таблицы
+            $table.find('td, th').removeClass('row-highlight column-highlight cell-highlight');
+            
+            // Дополнительная очистка через API если доступно
+            if (typeof dataTable !== 'undefined' && dataTable) {
+                try {
+                    var api = dataTable.api ? dataTable : $('#selectionMatrix').DataTable();
+                    api.columns().every(function() {
+                        $(this.header()).removeClass('row-highlight column-highlight cell-highlight');
+                    });
+                } catch (e) {
+                    // Игнорируем ошибки API если таблица не инициализирована
+                }
+            }
+        }
+
+        // Обработчики только для ячеек с чекбоксами (исключаем первый столбец)
+        $('#selectionMatrix tbody').on('mouseenter', 'td:not(:first-child)', function(e) {
+            // Проверяем, есть ли в ячейке чекбокс
+            if ($(this).find('input[type="checkbox"]').length > 0) {
+                highlightCrossHairs($(this));
+            }
+        });
+
+        // Обработчик для первого столбца - убираем подсветку
+        $('#selectionMatrix tbody').on('mouseenter', 'td:first-child', function(e) {
+            clearCrossHairs();
+        });
+
+        // Обработчики для заголовков столбцов (исключаем первый заголовок)
+        $('#selectionMatrix thead').on('mouseenter', 'th:not(:first-child)', function(e) {
+            var columnIndex = $(this).index();
+            highlightColumn(columnIndex);
+        });
+
+        // Обработчик для первого заголовка - убираем подсветку
+        $('#selectionMatrix thead').on('mouseenter', 'th:first-child', function(e) {
+            clearCrossHairs();
+        });
+
+        // Очистка при уходе мыши с таблицы
+        $('#selectionMatrix').on('mouseleave', function() {
+            clearCrossHairs();
+        });
+
+        // Очистка при переходе между элементами внутри таблицы
+        $('#selectionMatrix').on('mouseenter', 'td, th', function(e) {
+            // Если это первый столбец или заголовок - очищаем
+            if ($(this).is('td:first-child, th:first-child')) {
+                clearCrossHairs();
+                return;
+            }
+            
+            // Если это обычная ячейка без чекбокса - очищаем
+            if ($(this).is('td') && !$(this).find('input[type="checkbox"]').length) {
+                clearCrossHairs();
+                return;
+            }
+        });
+
+        // Дополнительная очистка при клике
+        $('#selectionMatrix').on('click', function() {
+            setTimeout(clearCrossHairs, 20);
+        });
     }
 
     function updateDeleteButtonState() {
@@ -1224,7 +1342,7 @@ $(document).ready(function () {
                 });
                 // Update checkbox states array
                 checkboxStates = checkboxStates.map(function(rowStates) {
-                    rowStates.splice(colIdx - 1, 1); // -1 because first column doesn't have checkbox
+                    rowStates.splice(colIdx - 1, 1); // -1 потому что первый столбец не имеет чекбокса
                     return rowStates;
                 });
             });

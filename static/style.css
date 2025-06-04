@@ -88,6 +88,48 @@ table.dataTable tbody td.column-selected {
     border-color: #9ec5fe !important;
 }
 
+/* Приоритет для выделенных элементов над подсветкой */
+.selected.row-highlight,
+.selected.column-highlight,
+.column-selected.row-highlight,
+.column-selected.column-highlight {
+    background-color: #cfe2ff !important;
+}
+
+/* Стили для подсветки по осям при hover */
+.row-highlight {
+    background-color: rgba(231, 241, 255, 0.7) !important; /* Более светлый оттенок для строки */
+}
+
+.column-highlight {
+    background-color: rgba(231, 241, 255, 0.7) !important; /* Более светлый оттенок для столбца */
+}
+
+.cell-highlight {
+    background-color: rgba(207, 226, 255, 0.9) !important; /* Более яркий цвет для текущей ячейки */
+}
+
+/* Переходы для плавной анимации */
+#selectionMatrix td {
+    transition: background-color 0.15s ease-in-out;
+}
+
+/* Обновленные стили выделения - учитываем приоритет */
+.selected,
+.column-selected,
+.dataTable thead th.selected,
+.dataTable tbody tr.selected,
+.dataTable tbody tr.selected td,
+.dataTable tbody td.column-selected,
+table.dataTable thead th.selected,
+table.dataTable tbody tr.selected,
+table.dataTable tbody tr.selected td,
+table.dataTable tbody td.column-selected {
+    background-color: #cfe2ff !important;
+    background-image: none !important;
+    border-color: #9ec5fe !important;
+}
+
 /* Объединенные эффекты наведения */
 .dataTable thead th:not(:first-child):hover,
 table.dataTable thead th:not(:first-child):hover,
