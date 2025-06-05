@@ -742,8 +742,11 @@ $(document).ready(function () {
             rowReorder: {
                 enable: true,
                 selector: 'td.select-cell',
-                update: true,
+                update: false,
                 snapX: true,
+                dataSrc: function(row) {
+                    return $(row).index();
+                }
             },
             select: false,
             scrollY: 'calc(100vh - 200px)',
@@ -872,8 +875,11 @@ $(document).ready(function () {
                     rowReorder: {
                         enable: true,
                         selector: 'td.select-cell',
-                        update: true,
+                        update: false,
                         snapX: true,
+                        dataSrc: function(row) {
+                            return $(row).index();
+                        }
                     },
                     select: false,
                     scrollY: 'calc(100vh - 200px)',
@@ -951,8 +957,11 @@ $(document).ready(function () {
             rowReorder: {
                 enable: true,
                 selector: 'td.select-cell',
-                update: true,
+                update: false,
                 snapX: true,
+                dataSrc: function(row) {
+                    return $(row).index();
+                }
             },
             select: false,
             scrollY: 'calc(100vh - 200px)',
