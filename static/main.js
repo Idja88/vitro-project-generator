@@ -96,7 +96,7 @@ $(document).ready(function () {
             });
         }
 
-        // Обработчик выделения строк
+        // Обработчик выделения строк в reattachEventHandlers()
         $('#selectionMatrix tbody').on('click', 'td:not(:first-child)', function(e) {
             // Проверяем, был ли клик на чекбоксе или его контейнере
             if ($(e.target).is('input[type="checkbox"]')) {
@@ -105,23 +105,54 @@ $(document).ready(function () {
             
             e.stopPropagation();
             var row = $(this).closest('tr');
-            var rowIdx = dataTable.row(row).index();
             
-            // Переключаем выделение строки
-            if (selectedRows.includes(rowIdx)) {
-                // Снимаем выделение
-                selectedRows = selectedRows.filter(idx => idx !== rowIdx);
-                row.removeClass('selected');
-                row.find('td').removeClass('selected');
+            // ИСПРАВЛЕНИЕ: Получаем как API индекс, так и DOM позицию
+            var api = dataTable.api ? dataTable : $('#selectionMatrix').DataTable();
+            var apiRowIdx = api.row(row).index(); // Внутренний индекс данных
+            var domRowIdx = row.index(); // Визуальная позиция в DOM
+            
+            console.log(`Row clicked: API index is ${apiRowIdx}, DOM index is ${domRowIdx}`);
+            
+            // ИСПРАВЛЕНИЕ: Ищем нужный индекс в selectedRows
+            // Проверяем, есть ли в selectedRows индекс, который соответствует текущей DOM позиции
+            var targetIndex = -1;
+            
+            // Сначала пробуем найти по API индексу (если строка не перемещалась)
+            if (selectedRows.includes(apiRowIdx)) {
+                targetIndex = apiRowIdx;
+                console.log(`Found by API index: ${targetIndex}`);
             } else {
-                // Добавляем выделение
-                selectedRows.push(rowIdx);
-                row.addClass('selected');
-                row.find('td').addClass('selected');
+                // Если не найден по API индексу, ищем по DOM позиции
+                // (это случай когда строка была перемещена)
+                if (selectedRows.includes(domRowIdx)) {
+                    targetIndex = domRowIdx;
+                    console.log(`Found by DOM index: ${targetIndex}`);
+                }
             }
             
+            // Переключаем выделение строки
+            if (targetIndex !== -1) {
+                // Снимаем выделение
+                selectedRows = selectedRows.filter(idx => idx !== targetIndex);
+                row.removeClass('selected');
+                row.find('td').removeClass('selected');
+                console.log(`Row ${targetIndex} deselected`);
+            } else {
+                // Добавляем выделение
+                // ИСПРАВЛЕНИЕ: Используем DOM индекс для новых выделений после перемещения
+                if (!selectedRows.includes(domRowIdx)) {
+                    selectedRows.push(domRowIdx);
+                }
+                row.addClass('selected');
+                row.find('td').addClass('selected');
+                console.log(`Row ${domRowIdx} selected`);
+            }
+            
+            // ИСПРАВЛЕНИЕ: Удаляем дубликаты после любых изменений
+            selectedRows = [...new Set(selectedRows)];
+            
             updateDeleteButtonState();
-            console.log(`Row ${rowIdx} selection toggled. Current selected rows:`, selectedRows);
+            console.log(`Row selection toggled. Current selected rows:`, selectedRows);
         });
 
         // Обработчик выделения столбцов через DataTables API
@@ -1344,8 +1375,14 @@ $(document).ready(function () {
 
         // Handle column deletion
         if (selectedColumns.length > 0) {
+            // ИСПРАВЛЕНИЕ: Удаляем дубликаты из selectedColumns перед удалением
+            var uniqueSelectedColumns = [...new Set(selectedColumns)];
+            console.log("Unique selected columns for deletion:", uniqueSelectedColumns);
+            
             // Remove columns in reverse order
-            selectedColumns.sort((a, b) => b - a).forEach(function(colIdx) {
+            uniqueSelectedColumns.sort((a, b) => b - a).forEach(function(colIdx) {
+                console.log(`Deleting column at index: ${colIdx}`);
+                
                 // Remove column from columns configuration
                 currentColumns.splice(colIdx, 1);
                 // Remove corresponding data from each row
@@ -1363,10 +1400,38 @@ $(document).ready(function () {
 
         // Handle row deletion
         if (selectedRows.length > 0) {
-            // Remove rows in reverse order
-            selectedRows.sort((a, b) => b - a).forEach(function(rowIdx) {
-                currentData.splice(rowIdx, 1);
-                checkboxStates.splice(rowIdx, 1);
+            // ИСПРАВЛЕНИЕ: Удаляем дубликаты из selectedRows перед удалением
+            var uniqueSelectedRows = [...new Set(selectedRows)];
+            console.log("Unique selected rows for deletion:", uniqueSelectedRows);
+            
+            // ИСПРАВЛЕНИЕ: Преобразуем DOM позиции в соответствующие DataTables API индексы
+            var api = dataTable.api ? dataTable : $('#selectionMatrix').DataTable();
+            var rowsToDelete = [];
+            
+            uniqueSelectedRows.forEach(function(domRowIndex) {
+                // Получаем строку по DOM позиции
+                var $row = $('#selectionMatrix tbody tr').eq(domRowIndex);
+                if ($row.length) {
+                    // Получаем API индекс этой строки
+                    var apiRowIndex = api.row($row).index();
+                    rowsToDelete.push(apiRowIndex);
+                    console.log(`DOM position ${domRowIndex} corresponds to API index ${apiRowIndex}`);
+                } else {
+                    console.warn(`Row not found at DOM position ${domRowIndex}`);
+                }
+            });
+            
+            // Remove rows in reverse order по API индексам
+            rowsToDelete.sort((a, b) => b - a).forEach(function(apiRowIdx) {
+                console.log(`Deleting row at API index: ${apiRowIdx}`);
+                
+                // Убеждаемся что индекс валиден
+                if (apiRowIdx >= 0 && apiRowIdx < currentData.length) {
+                    currentData.splice(apiRowIdx, 1);
+                    checkboxStates.splice(apiRowIdx, 1);
+                } else {
+                    console.warn(`Invalid API row index for deletion: ${apiRowIdx}`);
+                }
             });
         }
 
@@ -1683,63 +1748,77 @@ $(document).ready(function () {
         dataTable.on('row-reorder', function(e, diff, edit) {
             console.log('Row reorder event triggered', diff);
             
-            // Сохраняем текущее состояние чекбоксов перед изменением
-            var checkboxStates = getCheckboxStates();
-            
-            // Обновляем индексы выделенных строк
-            var newSelectedRows = [];
-            selectedRows.forEach(function(oldRowIndex) {
-                var newIndex = oldRowIndex;
+            // Обновляем индексы выделенных строк (только если есть выделенные)
+            if (selectedRows.length > 0) {
+                var newSelectedRows = [];
                 
-                // Проверяем каждое изменение в diff
-                diff.forEach(function(change) {
-                    var fromPos = change.oldPosition;
-                    var toPos = change.newPosition;
+                // Логика остается той же - используем DOM позиции из diff
+                selectedRows.forEach(function(oldRowIndex) {
+                    var newIndex = oldRowIndex;
                     
-                    if (oldRowIndex === fromPos) {
-                        // Перемещенная строка получает новый индекс
-                        newIndex = toPos;
-                    } else if (fromPos < oldRowIndex && toPos >= oldRowIndex) {
-                        // Строка сдвигается вверх
-                        newIndex = oldRowIndex - 1;
-                    } else if (fromPos > oldRowIndex && toPos <= oldRowIndex) {
-                        // Строка сдвигается вниз
-                        newIndex = oldRowIndex + 1;
+                    diff.forEach(function(change) {
+                        var fromPos = change.oldPosition;
+                        var toPos = change.newPosition;
+                        
+                        if (oldRowIndex === fromPos) {
+                            newIndex = toPos;
+                        } else {
+                            if (fromPos < toPos) {
+                                if (oldRowIndex > fromPos && oldRowIndex <= toPos) {
+                                    newIndex = oldRowIndex - 1;
+                                }
+                            } else {
+                                if (oldRowIndex >= toPos && oldRowIndex < fromPos) {
+                                    newIndex = oldRowIndex + 1;
+                                }
+                            }
+                        }
+                    });
+                    
+                    if (!newSelectedRows.includes(newIndex)) {
+                        newSelectedRows.push(newIndex);
                     }
                 });
                 
-                newSelectedRows.push(newIndex);
-            });
+                selectedRows = newSelectedRows;
+            }
             
-            // Обновляем массив выделенных строк
-            selectedRows = newSelectedRows;
-            
-            // Восстанавливаем состояние чекбоксов с минимальной задержкой
+            // Восстанавливаем состояние
             setTimeout(function() {
                 restoreAllCheckboxes();
-                updateRowSelection(); // Обновляем визуальное выделение строк
-                updateDeleteButtonState();
+                if (selectedRows.length > 0) {
+                    updateRowSelection();
+                }
                 reattachEventHandlers();
-            }, 25); // Уменьшена задержка до 25ms
+                updateDeleteButtonState();
+            }, 25);
         });
     }
 
     // Обновленная функция для визуального выделения строк
     function updateRowSelection() {
+        console.log("Updating row selection for indices:", selectedRows);
+        
         // Сначала убираем ВСЕ выделения со всех строк
         $('#selectionMatrix tbody tr').removeClass('selected');
         $('#selectionMatrix tbody tr td').removeClass('selected');
         
         // Применяем выделение только к актуальным строкам
-        selectedRows.forEach(function(rowIndex) {
-            var $row = $('#selectionMatrix tbody tr').eq(rowIndex);
-            if ($row.length) {
-                $row.addClass('selected');
-                $row.find('td').addClass('selected');
-            }
-        });
+        if (selectedRows.length > 0) {
+            selectedRows.forEach(function(rowIndex) {
+                // ИСПРАВЛЕНИЕ: Используем DOM селектор, так как selectedRows содержит DOM позиции
+                var $row = $('#selectionMatrix tbody tr').eq(rowIndex);
+                if ($row.length) {
+                    $row.addClass('selected');
+                    $row.find('td').addClass('selected');
+                    console.log(`Row at DOM position ${rowIndex} marked as selected`);
+                } else {
+                    console.warn(`Row not found for DOM position ${rowIndex}`);
+                }
+            });
+        }
         
-        console.log(`Updated row selection for indices: ${selectedRows}`);
+        console.log(`Updated row selection completed for indices: ${selectedRows}`);
     }
 
     // Новая функция для визуального выделения столбцов
