@@ -72,7 +72,11 @@ $(document).ready(function () {
     function resetSelections() {
         selectedRows = [];
         selectedColumns = [];
-        $('.selected, .column-selected').removeClass('selected column-selected');
+        
+        // Используем новые функции для очистки выделений
+        updateRowSelection();
+        updateColumnSelection();
+        
         updateDeleteButtonState();
     }
 
@@ -1385,7 +1389,6 @@ $(document).ready(function () {
         resetSelections();
     });
 
-    // Обработчик кнопки экспорта
     $('#exportExcelButton').on('click', function() {
         if (!projects.fieldValueMap.selection_matrix) {
             showAlert('Матрица выбора отсутствует', 'warning');
@@ -1599,17 +1602,81 @@ $(document).ready(function () {
         //     console.log("Column reorder started");
         // });
         
-        // После перемещения столбцов
-        dataTable.on('columns-reordered', function() {
-            console.log("Columns reordered - restoring all checkboxes");
+        // Замененный обработчик columns-reordered
+        dataTable.on('columns-reordered', function(e, settings, details) {
+            console.log("Columns reordered event:", details);
             
-            // Даем небольшую задержку для обновления DOM
+            // Обновляем индексы выделенных столбцов согласно новому порядку (только если есть выделенные)
+            if (selectedColumns.length > 0) {
+                var newSelectedColumns = [];
+                
+                selectedColumns.forEach(function(oldIndex) {
+                    var foundNewIndex = -1;
+                    
+                    // ИСПРАВЛЕНИЕ: Правильно используем details.mapping
+                    // details.mapping - это карта где ключ = новый индекс, значение = старый индекс
+                    // Нам нужно найти новый индекс для нашего старого индекса
+                    if (details && details.mapping) {
+                        for (var newIdx in details.mapping) {
+                            if (details.mapping[newIdx] === oldIndex) {
+                                foundNewIndex = parseInt(newIdx);
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (foundNewIndex > 0) { // Не включаем первый столбец
+                        // ИСПРАВЛЕНИЕ: Проверяем, что индекс еще не добавлен (избегаем дубликатов)
+                        if (!newSelectedColumns.includes(foundNewIndex)) {
+                            newSelectedColumns.push(foundNewIndex);
+                            console.log(`Column moved from index ${oldIndex} to ${foundNewIndex}`);
+                        }
+                    } else {
+                        // Fallback: если mapping не помог, ищем столбец по содержимому
+                        var api = dataTable.api ? dataTable : $('#selectionMatrix').DataTable();
+                        
+                        try {
+                            // Ищем выделенный заголовок в текущем состоянии
+                            api.columns().every(function(currentIndex) {
+                                if (currentIndex === 0) return; // Пропускаем первый столбец
+                                
+                                var $header = $(this.header());
+                                if ($header.hasClass('selected')) {
+                                    // ИСПРАВЛЕНИЕ: Проверяем, что индекс еще не добавлен (избегаем дубликатов)
+                                    if (!newSelectedColumns.includes(currentIndex)) {
+                                        newSelectedColumns.push(currentIndex);
+                                        console.log(`Column found by selected class: now at index ${currentIndex}`);
+                                    }
+                                    return false; // Выходим из цикла
+                                }
+                            });
+                        } catch (e) {
+                            console.warn(`Error in fallback search:`, e);
+                        }
+                    }
+                });
+                
+                // Обновляем массив выделенных столбцов
+                selectedColumns = newSelectedColumns;
+                console.log("Updated selectedColumns:", selectedColumns);
+            }
+            
+            // ВАЖНО: Восстанавливаем чекбоксы ВСЕГДА, независимо от наличия выделенных столбцов
             setTimeout(function() {
+                // Восстанавливаем чекбоксы из мастер-состояния
                 restoreAllCheckboxes();
+                
+                // Обновляем визуальное выделение столбцов (только если есть выделенные)
+                if (selectedColumns.length > 0) {
+                    updateColumnSelection();
+                }
                 
                 // Перепривязываем обработчики
                 reattachEventHandlers();
-            }, 100);
+                updateDeleteButtonState();
+                
+                console.log("Column reordering completed, checkboxes and selections restored");
+            }, 50);
         });
         
         // Обработчик для перетаскивания строк в attachTableEventHandlers()
@@ -1673,5 +1740,42 @@ $(document).ready(function () {
         });
         
         console.log(`Updated row selection for indices: ${selectedRows}`);
+    }
+
+    // Новая функция для визуального выделения столбцов
+    function updateColumnSelection() {
+        console.log("Updating column selection for indices:", selectedColumns);
+        
+        // ВАЖНО: Сначала убираем ВСЕ выделения
+        $('#selectionMatrix thead th').removeClass('selected');
+        $('#selectionMatrix tbody td').removeClass('column-selected');
+        
+        // Применяем выделение к обновленным индексам
+        if (selectedColumns.length > 0) {
+            var api = dataTable.api ? dataTable : $('#selectionMatrix').DataTable();
+            
+            selectedColumns.forEach(function(columnIndex) {
+                if (columnIndex > 0) {
+                    console.log(`Restoring selection for column ${columnIndex}`);
+                    
+                    try {
+                        // Выделяем заголовок
+                        var $header = $(api.column(columnIndex).header());
+                        if ($header.length) {
+                            $header.addClass('selected');
+                        }
+                        
+                        // Выделяем все ячейки столбца
+                        api.column(columnIndex).nodes().each(function(cell) {
+                            $(cell).addClass('column-selected');
+                        });
+                    } catch (e) {
+                        console.warn(`Error restoring selection for column ${columnIndex}:`, e);
+                    }
+                }
+            });
+        }
+        
+        console.log(`Updated column selection completed for indices: ${selectedColumns}`);
     }
 });
