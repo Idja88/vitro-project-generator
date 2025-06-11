@@ -1404,9 +1404,9 @@ $(document).ready(function () {
             var uniqueSelectedRows = [...new Set(selectedRows)];
             console.log("Unique selected rows for deletion:", uniqueSelectedRows);
             
-            // ИСПРАВЛЕНИЕ: Преобразуем DOM позиции в соответствующие DataTables API индексы
+            // ИСПРАВЛЕНИЕ: Создаем массив объектов с DOM позицией и соответствующим API индексом
             var api = dataTable.api ? dataTable : $('#selectionMatrix').DataTable();
-            var rowsToDelete = [];
+            var rowsToDeleteInfo = [];
             
             uniqueSelectedRows.forEach(function(domRowIndex) {
                 // Получаем строку по DOM позиции
@@ -1414,23 +1414,43 @@ $(document).ready(function () {
                 if ($row.length) {
                     // Получаем API индекс этой строки
                     var apiRowIndex = api.row($row).index();
-                    rowsToDelete.push(apiRowIndex);
+                    rowsToDeleteInfo.push({
+                        domIndex: domRowIndex,
+                        apiIndex: apiRowIndex
+                    });
                     console.log(`DOM position ${domRowIndex} corresponds to API index ${apiRowIndex}`);
                 } else {
                     console.warn(`Row not found at DOM position ${domRowIndex}`);
                 }
             });
             
-            // Remove rows in reverse order по API индексам
-            rowsToDelete.sort((a, b) => b - a).forEach(function(apiRowIdx) {
-                console.log(`Deleting row at API index: ${apiRowIdx}`);
+            // ИСПРАВЛЕНИЕ: Сортируем по API индексам для правильного удаления из currentData
+            // но отслеживаем соответствующие DOM индексы для checkboxStates
+            rowsToDeleteInfo.sort((a, b) => b.apiIndex - a.apiIndex);
+            
+            // Удаляем строки из currentData по API индексам
+            rowsToDeleteInfo.forEach(function(rowInfo) {
+                console.log(`Deleting row: DOM index ${rowInfo.domIndex}, API index ${rowInfo.apiIndex}`);
                 
-                // Убеждаемся что индекс валиден
-                if (apiRowIdx >= 0 && apiRowIdx < currentData.length) {
-                    currentData.splice(apiRowIdx, 1);
-                    checkboxStates.splice(apiRowIdx, 1);
+                // Убеждаемся что API индекс валиден
+                if (rowInfo.apiIndex >= 0 && rowInfo.apiIndex < currentData.length) {
+                    currentData.splice(rowInfo.apiIndex, 1);
                 } else {
-                    console.warn(`Invalid API row index for deletion: ${apiRowIdx}`);
+                    console.warn(`Invalid API row index for deletion: ${rowInfo.apiIndex}`);
+                }
+            });
+            
+            // ИСПРАВЛЕНИЕ: Для checkboxStates используем DOM позиции, отсортированные в обратном порядке
+            var domIndicesForCheckboxes = rowsToDeleteInfo.map(info => info.domIndex).sort((a, b) => b - a);
+            
+            domIndicesForCheckboxes.forEach(function(domRowIndex) {
+                console.log(`Deleting checkbox states for DOM index: ${domRowIndex}`);
+                
+                // Убеждаемся что DOM индекс валиден
+                if (domRowIndex >= 0 && domRowIndex < checkboxStates.length) {
+                    checkboxStates.splice(domRowIndex, 1);
+                } else {
+                    console.warn(`Invalid DOM row index for checkbox states deletion: ${domRowIndex}`);
                 }
             });
         }
@@ -1605,7 +1625,7 @@ $(document).ready(function () {
             }
         });
         
-        // Функция для восстановления всех чекбоксов из мастер-состояния
+        // Функция для восстановления всех чекбоксов из мастер-объекта
         function restoreAllCheckboxes() {
             console.log("Restoring all checkboxes from master state");
             
