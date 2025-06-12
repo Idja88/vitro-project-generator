@@ -130,9 +130,7 @@ def create_excel_from_template(token, project):
         # Загружаем шаблон
         wb = load_workbook(template_path)
         ws = wb.active
-        print(f"Шаблон загружен успешно: {template_path}")
     except FileNotFoundError:
-        print(f"Шаблон не найден: {template_path}")
         # Fallback - создаем новый файл
         wb = Workbook()
         ws = wb.active
@@ -176,102 +174,141 @@ def create_excel_from_template(token, project):
                     'number': mark_number,
                     'name': mark_name,
                     'display_name': display_name,
-                    'full_name': None  # Будет заполнено из API
+                    'full_name': None,  # Будет заполнено из API
+                    'department': None  # Будет заполнено из API
                 }
     
-    # === ПОЛУЧЕНИЕ ПОЛНЫХ НАЗВАНИЙ МАРОК ЧЕРЕЗ API ===
+    # === ПОЛУЧЕНИЕ ПОЛНЫХ НАЗВАНИЙ МАРОК И ОТДЕЛОВ ЧЕРЕЗ API ===
     if token:
-        print("Получение полных названий марок через API...")
         for mark_key, mark_info in all_marks.items():
             try:
                 # Получаем полную информацию о марке через API
                 mark_data = vc.get_mp_item(token, mark_info['id'])
                 if mark_data and 'fieldValueMap' in mark_data:
-                    # Предполагаем, что название марки хранится в поле 'name' или 'title'
-                    full_name = mark_data['fieldValueMap']['name']
+                    # Получаем название марки
+                    full_name = mark_data['fieldValueMap'].get('name')
                     if full_name:
                         all_marks[mark_key]['full_name'] = full_name
-                        print(f"  Марка ID {mark_info['id']}: '{full_name}'")
                     else:
-                        print(f"  Марка ID {mark_info['id']}: название не найдено в API")
                         all_marks[mark_key]['full_name'] = mark_info['display_name']  # Fallback
+                    
+                    # Получаем отдел марки
+                    try:
+                        department_name = mark_data['fieldValueMap']['sheet_set_department_assigned_to']['fieldValueMap']['name']
+                        all_marks[mark_key]['department'] = department_name
+                    except (KeyError, TypeError):
+                        # Если отдела нет - оставляем None
+                        all_marks[mark_key]['department'] = None
+                        
                 else:
-                    print(f"  Марка ID {mark_info['id']}: данные не получены из API")
                     all_marks[mark_key]['full_name'] = mark_info['display_name']  # Fallback
+                    all_marks[mark_key]['department'] = None
             except Exception as e:
-                print(f"  Ошибка при получении марки ID {mark_info['id']}: {e}")
                 all_marks[mark_key]['full_name'] = mark_info['display_name']  # Fallback
+                all_marks[mark_key]['department'] = None
     else:
-        # Если нет токена, используем display_name как fallback
-        print("Токен недоступен, используем краткие названия марок")
+        # Если нет токена, используем fallback значения
         for mark_key in all_marks:
             all_marks[mark_key]['full_name'] = all_marks[mark_key]['display_name']
+            all_marks[mark_key]['department'] = None
     
-    mark_keys = list(all_marks.keys())
+    # === ГРУППИРОВКА МАРОК ПО ОТДЕЛАМ ===
+    departments_marks = {}
+    marks_without_department = []
+    
+    for mark_key, mark_info in all_marks.items():
+        department = mark_info['department']
+        if department:
+            if department not in departments_marks:
+                departments_marks[department] = []
+            departments_marks[department].append((mark_key, mark_info))
+        else:
+            # Марки без отдела идут в отдельный список
+            marks_without_department.append((mark_key, mark_info))
+    
+    # Сортируем отделы по алфавиту
+    sorted_departments = sorted(departments_marks.keys())
     
     # === ЗАПОЛНЕНИЕ МЕТАДАННЫХ ===
-    print("Заполнение метаданных проекта...")
-    
     # B1 - Название проекта
     ws['B1'] = project_name
-    print(f"  Название проекта '{project_name}' размещено в B1")
     
     # F2 - Код проекта
     ws['F2'] = project_code
-    print(f"  Код проекта '{project_code}' размещен в F2")
     
     # N3 - ГИП (главный инженер проекта)
     ws['N3'] = project_chief
-    print(f"  ГИП '{project_chief}' размещен в N3")
     
     # S3 - Текущая дата в формате DD.MM.YYYY
     current_date = datetime.now().strftime("%d.%m.%Y")
     ws['S3'] = current_date
-    print(f"  Дата '{current_date}' размещена в S3")
     
-    # === РАЗМЕЩЕНИЕ ПОЛНЫХ НАЗВАНИЙ МАРОК ===
-    # F8, G8, H8... - полные названия марок
-    print(f"Размещение полных названий марок начиная с F8...")
-    for i, mark_key in enumerate(mark_keys):
-        col = 6 + i  # F=6, G=7, H=8, I=9...
-        mark_info = all_marks[mark_key]
-        
-        cell = ws.cell(row=8, column=col)
-        cell.value = mark_info['full_name']
-        print(f"  Полное название '{mark_info['full_name']}' размещено в {get_column_letter(col)}8")
+    # === РАЗМЕЩЕНИЕ ОТДЕЛОВ И МАРОК ===
+    current_col = 6  # Начинаем с колонки F (6)
+    mark_keys_ordered = []  # Упорядоченный список ключей марок
     
-    # === РАЗМЕЩЕНИЕ НУМЕРАЦИИ МАРОК ===
-    # F10, G10, H10... - целые числа начиная с 3
-    print(f"Размещение нумерации марок начиная с F10...")
-    for i in range(len(mark_keys)):
-        col = 6 + i  # F=6, G=7, H=8, I=9...
-        number = 3 + i  # Начинаем с 3
+    # Сначала размещаем марки с отделами
+    for department in sorted_departments:
+        marks_in_dept = departments_marks[department]
+        dept_start_col = current_col
         
-        cell = ws.cell(row=10, column=col)
-        cell.value = number
-        print(f"  Номер '{number}' размещен в {get_column_letter(col)}10")
+        # Размещаем марки отдела
+        for mark_key, mark_info in marks_in_dept:
+            # Добавляем в упорядоченный список
+            mark_keys_ordered.append(mark_key)
+            
+            # F8, G8, H8... - полные названия марок
+            cell_f8 = ws.cell(row=8, column=current_col)
+            cell_f8.value = mark_info['full_name']
+            
+            # F9, G9, H9... - коды марок
+            cell_f9 = ws.cell(row=9, column=current_col)
+            cell_f9.value = mark_info['display_name']
+            
+            # F10, G10, H10... - нумерация
+            cell_f10 = ws.cell(row=10, column=current_col)
+            cell_f10.value = 3 + len(mark_keys_ordered) - 1  # Нумерация с 3
+            
+            current_col += 1
+        
+        # Размещаем название отдела в F7 и объединяем ячейки
+        dept_end_col = current_col - 1
+        if dept_start_col <= dept_end_col:
+            # Записываем название отдела
+            dept_cell = ws.cell(row=7, column=dept_start_col)
+            dept_cell.value = department
+            
+            # Объединяем ячейки для отдела (если марок больше одной)
+            if dept_start_col < dept_end_col:
+                merge_range = f"{get_column_letter(dept_start_col)}7:{get_column_letter(dept_end_col)}7"
+                ws.merge_cells(merge_range)
     
-    # === РАЗМЕЩЕНИЕ МАРОК ===
-    # Марки размещаются горизонтально начиная с F9, G9, H9...
-    print(f"Размещение {len(mark_keys)} марок начиная с F9...")
-    for i, mark_key in enumerate(mark_keys):
-        col = 6 + i  # F=6, G=7, H=8, I=9...
-        mark_info = all_marks[mark_key]
+    # Затем размещаем марки без отдела (в конце)
+    for mark_key, mark_info in marks_without_department:
+        # Добавляем в упорядоченный список
+        mark_keys_ordered.append(mark_key)
         
-        # Записываем в ячейку (для объединенных ячеек openpyxl автоматически записывает в первую)
-        cell = ws.cell(row=9, column=col)
-        cell.value = mark_info['display_name']
-        print(f"  Марка '{mark_info['display_name']}' размещена в {get_column_letter(col)}9")
+        # F8, G8, H8... - полные названия марок
+        cell_f8 = ws.cell(row=8, column=current_col)
+        cell_f8.value = mark_info['full_name']
+        
+        # F9, G9, H9... - коды марок
+        cell_f9 = ws.cell(row=9, column=current_col)
+        cell_f9.value = mark_info['display_name']
+        
+        # F10, G10, H10... - нумерация
+        cell_f10 = ws.cell(row=10, column=current_col)
+        cell_f10.value = 3 + len(mark_keys_ordered) - 1  # Нумерация с 3
+        
+        current_col += 1
+        
+        # Для марок без отдела не заполняем строку 7 (оставляем пустой)
     
     # === РАЗМЕЩЕНИЕ ОБЪЕКТОВ ===
-    # Объекты размещаются вертикально начиная с C11, C12, C13...
-    # Коды объектов размещаются в B11, B12, B13...
-    print(f"Размещение {len(objects)} объектов начиная с C11...")
     for i, obj in enumerate(objects):
         row = 11 + i  # C11, C12, C13...
         
         # === ФОРМИРОВАНИЕ И РАЗМЕЩЕНИЕ КОДА ОБЪЕКТА ===
-        # Код объекта = project_code + "-" + object['number'] (если есть number)
         if obj.get('number'):
             object_code = f"{project_code}-{obj['number']}"
         else:
@@ -280,16 +317,13 @@ def create_excel_from_template(token, project):
         # Записываем код объекта в столбец B
         code_cell = ws.cell(row=row, column=2)  # B=2
         code_cell.value = object_code
-        print(f"  Код объекта '{object_code}' размещен в B{row}")
         
         # Записываем имя объекта в столбец C
         name_cell = ws.cell(row=row, column=3)  # C=3
         name_cell.value = obj['name']
-        print(f"  Объект '{obj['name']}' размещен в C{row}")
         
         # === РАЗМЕЩЕНИЕ ПЕРЕСЕЧЕНИЙ ===
-        # Для каждого объекта проверяем наличие марок и ставим "X"
-        for j, mark_key in enumerate(mark_keys):
+        for j, mark_key in enumerate(mark_keys_ordered):
             col = 6 + j  # F=6, G=7, H=8...
             mark_info = all_marks[mark_key]
             
@@ -304,9 +338,6 @@ def create_excel_from_template(token, project):
             if has_mark:
                 intersection_cell = ws.cell(row=row, column=col)
                 intersection_cell.value = 'X'
-                print(f"    Пересечение 'X' в {get_column_letter(col)}{row}")
-    
-    print("Формирование Excel файла завершено")
     
     # Сохранение
     excel_buffer = BytesIO()
