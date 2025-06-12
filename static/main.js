@@ -1766,57 +1766,74 @@ $(document).ready(function () {
         
         // Обработчик для перетаскивания строк в attachTableEventHandlers()
         dataTable.on('row-reorder', function(e, diff, edit) {
-            console.log('Row reorder event triggered', diff);
+            console.log('=== ROW REORDER EVENT START ===');
+            console.log('Raw diff data:', JSON.stringify(diff, null, 2));
+            console.log('Current selectedRows:', selectedRows);
             
             // Обновляем индексы выделенных строк (только если есть выделенные)
             if (selectedRows.length > 0) {
                 var newSelectedRows = [];
                 
-                // Логика остается той же - используем DOM позиции из diff
+                // ИСПРАВЛЕННАЯ ЛОГИКА: обрабатываем только прямые перемещения выделенных строк
                 selectedRows.forEach(function(oldRowIndex) {
-                    var newIndex = oldRowIndex;
+                    console.log(`\n--- Processing selected row ${oldRowIndex} ---`);
+                    var newIndex = oldRowIndex; // По умолчанию остается на месте
                     
-                    diff.forEach(function(change) {
-                        var fromPos = change.oldPosition;
-                        var toPos = change.newPosition;
-                        
-                        if (oldRowIndex === fromPos) {
-                            newIndex = toPos;
-                        } else {
-                            if (fromPos < toPos) {
-                                if (oldRowIndex > fromPos && oldRowIndex <= toPos) {
-                                    newIndex = oldRowIndex - 1;
-                                }
-                            } else {
-                                if (oldRowIndex >= toPos && oldRowIndex < fromPos) {
-                                    newIndex = oldRowIndex + 1;
-                                }
-                            }
-                        }
+                    // ИСПРАВЛЕНИЕ: Ищем только ПРЯМОЕ перемещение выделенной строки
+                    var directMove = diff.find(function(change) {
+                        return change.oldPosition === oldRowIndex;
                     });
                     
+                    if (directMove) {
+                        // Это наша выделенная строка - она перемещается напрямую
+                        newIndex = directMove.newPosition;
+                        console.log(`✓ DIRECT MOVE: Selected row ${oldRowIndex} moved to ${newIndex}`);
+                    } else {
+                        console.log(`✗ No direct move found for selected row ${oldRowIndex}, staying at ${newIndex}`);
+                    }
+                    
+                    console.log(`Final result for row ${oldRowIndex}: newIndex = ${newIndex}`);
+                    
+                    // Добавляем новый индекс (избегаем дубликатов)
                     if (!newSelectedRows.includes(newIndex)) {
                         newSelectedRows.push(newIndex);
+                        console.log(`Added ${newIndex} to newSelectedRows`);
+                    } else {
+                        console.log(`Skipped duplicate ${newIndex}`);
                     }
                 });
                 
+                console.log(`\nBEFORE update: selectedRows = [${selectedRows}]`);
+                console.log(`AFTER update: selectedRows = [${newSelectedRows}]`);
+                
+                // Обновляем массив выделенных строк СРАЗУ
                 selectedRows = newSelectedRows;
             }
             
-            // Восстанавливаем состояние
+            console.log('=== ROW REORDER EVENT END ===\n');
+            
+            // Восстанавливаем состояние с небольшой задержкой
             setTimeout(function() {
+                // Восстанавливаем чекбоксы из мастер-состояния
                 restoreAllCheckboxes();
+                
+                // Обновляем визуальное выделение строк (только если есть выделенные)
                 if (selectedRows.length > 0) {
                     updateRowSelection();
                 }
+                
+                // Перепривязываем обработчики
                 reattachEventHandlers();
                 updateDeleteButtonState();
+                
+                console.log("Row reordering completed, selections restored to new positions");
             }, 25);
         });
     }
 
-    // Обновленная функция для визуального выделения строк
+    // Обновленная функция для визуального выделения строк с логированием
     function updateRowSelection() {
+        console.log("=== UPDATE ROW SELECTION START ===");
         console.log("Updating row selection for indices:", selectedRows);
         
         // Сначала убираем ВСЕ выделения со всех строк
@@ -1826,19 +1843,24 @@ $(document).ready(function () {
         // Применяем выделение только к актуальным строкам
         if (selectedRows.length > 0) {
             selectedRows.forEach(function(rowIndex) {
+                console.log(`Trying to select row at DOM position ${rowIndex}`);
+                
                 // ИСПРАВЛЕНИЕ: Используем DOM селектор, так как selectedRows содержит DOM позиции
                 var $row = $('#selectionMatrix tbody tr').eq(rowIndex);
                 if ($row.length) {
                     $row.addClass('selected');
                     $row.find('td').addClass('selected');
-                    console.log(`Row at DOM position ${rowIndex} marked as selected`);
+                    
+                    // Получаем текст первой ячейки для проверки
+                    var objectName = $row.find('td:first-child div').text();
+                    console.log(`✓ Row at DOM index ${rowIndex} marked as selected (Object: "${objectName}")`);
                 } else {
-                    console.warn(`Row not found for DOM position ${rowIndex}`);
+                    console.warn(`✗ Row not found for DOM position ${rowIndex}`);
                 }
             });
         }
         
-        console.log(`Updated row selection completed for indices: ${selectedRows}`);
+        console.log(`=== UPDATE ROW SELECTION END ===\n`);
     }
 
     // Новая функция для визуального выделения столбцов
