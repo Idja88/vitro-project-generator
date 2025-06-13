@@ -1,12 +1,12 @@
+import json
+import os
+from datetime import datetime
+from io import BytesIO
 from flask import Blueprint, jsonify, send_file, current_app
-import vitro_cad_api as vc
-from decorators import require_token
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
-from io import BytesIO
-import json
-from datetime import datetime
-import os
+import vitro_cad_api as vc
+from decorators import require_token
 
 bp = Blueprint('export', __name__, url_prefix='/export')
 
@@ -23,12 +23,17 @@ def export_project_to_excel(token, project_id):
         
         if project["fieldValueMap"].get("selection_matrix") is None:
             return jsonify({'error': 'Матрица выбора отсутствует'}), 400
+        
+        # Путь к шаблону
+        template_path = os.path.join(os.path.dirname(__file__), '..', 'templates', 'f10_template.xlsx')
 
-        # Создаем Excel файл
-        #excel_buffer = create_simple_excel(project)
-
-        # Если нужно использовать шаблон, раскомментируйте следующую строку
-        excel_buffer = create_excel_from_template(token, project)    
+        # Проверяем, существует ли файл шаблона
+        if not os.path.exists(template_path):
+            # Создаем Excel файл
+            excel_buffer = create_simple_excel(project)
+        else:
+            # Если есть шаблон, используем его
+            excel_buffer = create_excel_from_template(token, project, template_path)
 
         # Имя файла
         filename = f"{project['fieldValueMap']['name']}_Ф10.xlsx"
@@ -120,11 +125,8 @@ def create_simple_excel(project):
     
     return excel_buffer
 
-def create_excel_from_template(token, project):
-    """Создает Excel файл на основе шаблона"""
-    
-    # Путь к шаблону
-    template_path = os.path.join(os.path.dirname(__file__), '..', 'templates', 'f10_template.xlsx')
+# Создаем Excel файл из шаблона
+def create_excel_from_template(token, project, template_path):
     
     try:
         # Загружаем шаблон
@@ -175,7 +177,7 @@ def create_excel_from_template(token, project):
                     'name': mark_name,
                     'display_name': display_name,
                     'full_name': None,  # Будет заполнено из API
-                    'department': None  # Будет заполнено из API
+                    'package': None  # Будет заполнено из API
                 }
     
     # === ПОЛУЧЕНИЕ ПОЛНЫХ НАЗВАНИЙ МАРОК И ОТДЕЛОВ ЧЕРЕЗ API ===
@@ -192,43 +194,43 @@ def create_excel_from_template(token, project):
                     else:
                         all_marks[mark_key]['full_name'] = mark_info['display_name']  # Fallback
                     
-                    # Получаем отдел марки
+                    # Получаем часть марки
                     try:
-                        department_name = mark_data['fieldValueMap']['sheet_set_department_assigned_to']['fieldValueMap']['name']
-                        all_marks[mark_key]['department'] = department_name
+                        package_name = mark_data['fieldValueMap']['sheet_package_lookup']['fieldValueMap']['name']
+                        all_marks[mark_key]['package'] = package_name
                     except (KeyError, TypeError):
-                        # Если отдела нет - оставляем None
-                        all_marks[mark_key]['department'] = None
-                        
+                        # Если части нет - оставляем None
+                        all_marks[mark_key]['package'] = None
+
                 else:
                     all_marks[mark_key]['full_name'] = mark_info['display_name']  # Fallback
-                    all_marks[mark_key]['department'] = None
+                    all_marks[mark_key]['package'] = None
             except Exception as e:
                 all_marks[mark_key]['full_name'] = mark_info['display_name']  # Fallback
-                all_marks[mark_key]['department'] = None
+                all_marks[mark_key]['package'] = None
     else:
         # Если нет токена, используем fallback значения
         for mark_key in all_marks:
             all_marks[mark_key]['full_name'] = all_marks[mark_key]['display_name']
-            all_marks[mark_key]['department'] = None
-    
-    # === ГРУППИРОВКА МАРОК ПО ОТДЕЛАМ ===
-    departments_marks = {}
-    marks_without_department = []
-    
+            all_marks[mark_key]['package'] = None
+
+    # === ГРУППИРОВКА МАРОК ПО ЧАСТЯМ ===
+    packages_marks = {}
+    marks_without_package = []
+
     for mark_key, mark_info in all_marks.items():
-        department = mark_info['department']
-        if department:
-            if department not in departments_marks:
-                departments_marks[department] = []
-            departments_marks[department].append((mark_key, mark_info))
+        package = mark_info['package']
+        if package:
+            if package not in packages_marks:
+                packages_marks[package] = []
+            packages_marks[package].append((mark_key, mark_info))
         else:
-            # Марки без отдела идут в отдельный список
-            marks_without_department.append((mark_key, mark_info))
-    
-    # Сортируем отделы по алфавиту
-    sorted_departments = sorted(departments_marks.keys())
-    
+            # Марки без части идут в отдельный список
+            marks_without_package.append((mark_key, mark_info))
+
+    # Сортируем части по алфавиту
+    sorted_packages = sorted(packages_marks.keys())
+
     # === ЗАПОЛНЕНИЕ МЕТАДАННЫХ ===
     # B1 - Название проекта
     ws['B1'] = project_name
@@ -247,13 +249,13 @@ def create_excel_from_template(token, project):
     current_col = 6  # Начинаем с колонки F (6)
     mark_keys_ordered = []  # Упорядоченный список ключей марок
     
-    # Сначала размещаем марки с отделами
-    for department in sorted_departments:
-        marks_in_dept = departments_marks[department]
-        dept_start_col = current_col
-        
-        # Размещаем марки отдела
-        for mark_key, mark_info in marks_in_dept:
+    # Сначала размещаем марки с пакетами
+    for package in sorted_packages:
+        marks_in_pkg = packages_marks[package]
+        pkg_start_col = current_col
+
+        # Размещаем марки пакета
+        for mark_key, mark_info in marks_in_pkg:
             # Добавляем в упорядоченный список
             mark_keys_ordered.append(mark_key)
             
@@ -271,20 +273,20 @@ def create_excel_from_template(token, project):
             
             current_col += 1
         
-        # Размещаем название отдела в F7 и объединяем ячейки
-        dept_end_col = current_col - 1
-        if dept_start_col <= dept_end_col:
-            # Записываем название отдела
-            dept_cell = ws.cell(row=7, column=dept_start_col)
-            dept_cell.value = department
-            
-            # Объединяем ячейки для отдела (если марок больше одной)
-            if dept_start_col < dept_end_col:
-                merge_range = f"{get_column_letter(dept_start_col)}7:{get_column_letter(dept_end_col)}7"
+        # Размещаем название части в F7 и объединяем ячейки
+        pkg_end_col = current_col - 1
+        if pkg_start_col <= pkg_end_col:
+            # Записываем название пакета
+            pkg_cell = ws.cell(row=7, column=pkg_start_col)
+            pkg_cell.value = package
+
+            # Объединяем ячейки для части (если марок больше одной)
+            if pkg_start_col < pkg_end_col:
+                merge_range = f"{get_column_letter(pkg_start_col)}7:{get_column_letter(pkg_end_col)}7"
                 ws.merge_cells(merge_range)
-    
-    # Затем размещаем марки без отдела (в конце)
-    for mark_key, mark_info in marks_without_department:
+
+    # Затем размещаем марки без части (в конце)
+    for mark_key, mark_info in marks_without_package:
         # Добавляем в упорядоченный список
         mark_keys_ordered.append(mark_key)
         
@@ -337,7 +339,7 @@ def create_excel_from_template(token, project):
             
             if has_mark:
                 intersection_cell = ws.cell(row=row, column=col)
-                intersection_cell.value = 'X'
+                intersection_cell.value = '+'
     
     # Сохранение
     excel_buffer = BytesIO()
