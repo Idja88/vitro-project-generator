@@ -128,6 +128,53 @@ def delete_folder(token, delete_data):
         
     return deleted_data
 
+def set_folder_permission(token, folder_data):
+    """Подготавливает данные для установки уникальных прав"""
+
+    #Находим принадлежность папки к отделу(ам)
+    mark_info_data = vc.get_mp_children(
+        token, 
+        current_app.config['MARK_LIST_ID'],
+        recursive=False,
+        query=f"item => item.Id == Guid(\"{folder_data[0]['fieldValueMap']['sheet_set_lookup']['id']}\")"
+        )
+    
+    # Если не удалось получить данные о принадлежности марки, то пропускаем установку прав
+    if not mark_info_data[0]['fieldValueMap'].get('sheet_set_department_assigned_to'):
+        print(f"Не удалось получить данные о принадлежности марки {folder_data[0]['fieldValueMap']['name']} к отделу(ам)")
+        return None
+    else:
+        # Подготавливаем данные для установки уникальных прав
+        set_unique_permission_data = {
+            "id": folder_data[0]['id'],
+            "copy_permission": True
+        }
+
+        #Если у марки есть приналежность к нескольким отделам, то проходим по ним в цикле
+        for department in mark_info_data[0]['fieldValueMap']['sheet_set_department_assigned_to']:
+            # Подготавливаем данные для установки прав на отдел
+            update_unique_permission_data = [
+                {
+                    "list_id": current_app.config['SCOPE_LIST_ID'],
+                    "content_type_id": current_app.config['SCOPE_CT_ID'],
+                    "parent_id": current_app.config['SCOPE_LIST_ID'],
+                    "name": f"Разрывы прав - {folder_data[0]['fieldValueMap']['name']}",
+                    "source": folder_data[0]['id'],
+                    "principal": department['id'],
+                    "permission_level": current_app.config['EDIT_PERMISSION_LEVEL_ID']
+                }
+            ]
+
+            update_unique_permission_data = vc.update_mp_list(token, update_unique_permission_data)
+
+            if not update_unique_permission_data:
+                return jsonify({"error": "Не удалось установить права на папку марки"}), 500
+            
+        # Устанавливаем уникальные права
+        vc.set_mp_item_unique_permission(token, set_unique_permission_data)
+
+        return update_unique_permission_data
+
 # Создаем структуру проекта
 @bp.route('/create/<project_id>', methods=['POST'])
 @require_token
@@ -167,10 +214,12 @@ def create_project_structure(token, project_id):
             if object_folder['id'] == '00000000-0000-0000-0000-000000000000':
                 # Для специального объекта создаем марки напрямую
                 for mark_index, mark_data in enumerate(object_folder['marks']):
-                    # Если папка марки уже существует, пропускаем создание
+                    # Если папка марки уже существует, пропускаем создание, иначе создаем
                     if mark_data['folder_structure_id'] == '':
                         mark_folder_data = create_mark_folder(token, object_parent_id, mark_data)
-                        #копируем шаблон марки в папку марки
+                        # Устанавливаем уникальные права доступа для папки марки
+                        set_folder_permission(token, mark_folder_data)
+                        # Копируем шаблон марки в папку марки
                         vc.copy_mp_item(token, mark_folder_data[0]['id'], mark_template_income_data)
                         # Сохраняем ID папки марки в матрице выбора
                         selection_matrix['objects'][object_index]['marks'][mark_index]['folder_structure_id'] = mark_folder_data[0]['id']
@@ -222,7 +271,9 @@ def create_project_structure(token, project_id):
                     # Если папка марки уже существует, пропускаем создание
                     if mark_data['folder_structure_id'] == '':
                         mark_folder_data = create_mark_folder(token, object_folder['folder_structure_id'], mark_data)
-                        #копируем шаблон марки в папку марки
+                        # Устанавливаем уникальные права доступа для папки марки
+                        set_folder_permission(token, mark_folder_data)
+                        # Копируем шаблон марки в папку марки
                         vc.copy_mp_item(token, mark_folder_data[0]['id'], mark_template_income_data)
                         # Сохраняем ID папки марки в матрице выбора
                         selection_matrix['objects'][object_index]['marks'][mark_index]['folder_structure_id'] = mark_folder_data[0]['id']

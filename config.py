@@ -18,11 +18,13 @@ class Config:
     OBJECT_LIST_ID = os.getenv("OBJECT_LIST_ID")
     DOCUMENT_LIST_ID = os.getenv("DOCUMENT_LIST_ID")
     RECYCLE_BIN_LIST_ID = os.getenv("RECYCLE_BIN_LIST_ID")
+    SCOPE_LIST_ID = os.getenv("SCOPE_LIST_ID")
 
     PROJECT_CT_ID = os.getenv("PROJECT_CT_ID")
     CUSTOMER_CT_ID = os.getenv("CUSTOMER_CT_ID")
     OBJECT_CT_ID = os.getenv("OBJECT_CT_ID")
     MARK_CT_ID = os.getenv("MARK_CT_ID")
+    SCOPE_CT_ID = os.getenv("SCOPE_CT_ID")
 
     PROJECT_FOLDER_CT_ID = os.getenv("PROJECT_FOLDER_CT_ID")
     OBJECT_FOLDER_CT_ID = os.getenv("OBJECT_FOLDER_CT_ID")
@@ -31,6 +33,8 @@ class Config:
     MARK_TEMPLATE_FOLDER_ID = os.getenv("MARK_TEMPLATE_FOLDER_ID")
     PROJECT_TEMPLATE_FOLDER_ID = os.getenv("PROJECT_TEMPLATE_FOLDER_ID")
     PROJECT_TEMPLATE_ANCHOR_NAME = os.getenv("PROJECT_TEMPLATE_ANCHOR_NAME")
+
+    EDIT_PERMISSION_LEVEL_ID = os.getenv("EDIT_PERMISSION_LEVEL_ID")
 
 # Конфигурация для development
 class DevelopmentConfig(Config):

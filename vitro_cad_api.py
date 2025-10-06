@@ -106,3 +106,14 @@ def restore_mp_item(mp_token, item_id):
     except requests.exceptions.RequestException as e:
         print(f"Error restoring MP items: {e}")
         return None
+
+def set_mp_item_unique_permission(mp_token, data):
+    mp_url = current_app.config['VITRO_CAD_API_BASE_URL']
+    url_string = f"{mp_url}/api/security/setItemUniquePermission"
+    headers = {'Authorization': mp_token}
+    try:
+        with requests.post(url=url_string, headers=headers, json=data) as response:
+            response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print(f"Error setting unique permission for MP item")
+        return None
