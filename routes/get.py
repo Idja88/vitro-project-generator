@@ -57,9 +57,7 @@ def get_projects(token):
 
     project_list_id = current_app.config['PROJECT_LIST_ID'] # parentId для списка "Реестр Проектов"
 
-    query_filter = f"item => item.GetValueAsBool(\"is_created_by_generator\") == True" # Фильтр по флагу
-
-    project_data = vc.get_mp_children(token, project_list_id, recursive=False, query=query_filter) # Используем get_mp_children для получения списка
+    project_data = vc.get_mp_children(token, project_list_id, recursive=False) # Используем get_mp_children для получения списка
 
     if project_data is None:
         return jsonify({"error": "Не удалось получить список проектов из Vitro-CAD MP"}), 500
