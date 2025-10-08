@@ -140,7 +140,7 @@ def create_excel_from_template(token, project, template_path):
     
     # Получаем данные проекта
     project_name = project["fieldValueMap"]["name"]
-    project_code = project["fieldValueMap"]["project_code_auto"]
+    project_code = project["fieldValueMap"]["code"]
     project_chief = project["fieldValueMap"]["chief_project_engineer"]["fieldValueMap"]["name"]
     selection_matrix_raw = project["fieldValueMap"]["selection_matrix"]
 
