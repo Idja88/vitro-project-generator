@@ -140,7 +140,7 @@ def set_folder_permission(token, folder_data):
         )
     
     # Если не удалось получить данные о принадлежности марки, то пропускаем установку прав
-    if not mark_info_data[0]['fieldValueMap'].get('sheet_set_department_assigned_to'):
+    if not mark_info_data[0]['fieldValueMap'].get('principal_lookup'):
         print(f"Не удалось получить данные о принадлежности марки {folder_data[0]['fieldValueMap']['name']} к отделу(ам)")
         return None
     else:
@@ -151,7 +151,7 @@ def set_folder_permission(token, folder_data):
         }
 
         #Если у марки есть приналежность к нескольким отделам, то проходим по ним в цикле
-        for department in mark_info_data[0]['fieldValueMap']['sheet_set_department_assigned_to']:
+        for department in mark_info_data[0]['fieldValueMap']['principal_lookup']:
             # Подготавливаем данные для установки прав на отдел
             update_unique_permission_data = [
                 {
