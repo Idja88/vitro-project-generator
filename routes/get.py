@@ -50,6 +50,18 @@ def get_marks(token):
 
     return jsonify(mark_data)
 
+# Получаем информацию о марке по конкретному ID из Vitro-CAD MP
+@bp.route('/marks/<mark_id>', methods=['GET'])
+@require_token
+def get_mark_info(token, mark_id):
+
+    mark_data = vc.get_mp_item(token, mark_id) # Используем get_mp_item для получения данных ОДНОЙ марки по ID
+
+    if mark_data is None:
+        return jsonify({"error": "Не удалось получить данные марки из Vitro-CAD MP"}), 500
+
+    return jsonify(mark_data)
+
 # Получает список проектов из Vitro-CAD MP
 @bp.route('/projects', methods=['GET'])
 @require_token
