@@ -7,7 +7,7 @@ import copy
 bp = Blueprint('set', __name__, url_prefix='/set')
 
 # Обновляем инфомацию о проекте матрицей выбора
-def update_project_info(token, parent_id, project_data):
+def update_project_info(token, project_data):
     """Обновляет информацию о проекте в реестре"""
     project_id = project_data['id']
     project_name = project_data['name']
@@ -312,7 +312,7 @@ def create_project_structure(token, project_id):
 
         if diffrence:
             # Если есть изменения, обновляем проект
-            project_updated_data = update_project_info(token, parent_id=None, project_data=selection_matrix)
+            project_updated_data = update_project_info(token, project_data=selection_matrix)
         
         #Формируем ссылку на проект
         project_folder = vc.get_mp_item(token, selection_matrix['folder_structure_id'])
