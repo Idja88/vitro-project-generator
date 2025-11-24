@@ -590,22 +590,10 @@ $(document).ready(function () {
         });
     }
 
-    // Load customers
-    function loadCustomersDropdown(companyId) {
+    // Load objects by parent ID
+    function loadObjectsDropdown(parentId) {
         return new Promise((resolve, reject) => {
-            $.getJSON(`/get/customers/${companyId}`, function (customers) {
-                resolve(customers);
-            }).fail(function (jqXHR, textStatus, errorThrown) {
-                console.error("Ошибка загрузки заказчиков:", textStatus, errorThrown);
-                reject(errorThrown);
-            });
-        });
-    }
-
-    // Load objects by customer ID
-    function loadObjectsDropdown(customerId) {
-        return new Promise((resolve, reject) => {
-            $.getJSON(`/get/objects/${customerId}`, function (objectsData) {
+            $.getJSON(`/get/objects/${parentId}`, function (objectsData) {
                 var dropdown = $('#objectDropdown');
                 dropdown.empty();
 
@@ -1079,41 +1067,36 @@ $(document).ready(function () {
             });
     }
 
-    // 5. Event Handlers
-    // 5.1 Modal Open Handlers
+    // Update the button click handler
     $('#newRowButton').on('click', function() {
-        // Сначала открываем модальное окно
         $('#addRowModal').modal({
             backdrop: 'static',
             keyboard: false,
             show: true
         });
         
-        // Затем проверяем и загружаем данные если нужно
+        // Получаем parent_id из поля object_list_lookup_tree
+        var parentId = projects.fieldValueMap.object_list_lookup_tree.id;
+        
+        if (!parentId) {
+            console.error('Parent ID не найден в поле object_list_lookup_tree');
+            showAlert('Ошибка: не установлен родительский элемент для объектов', 'danger');
+            return;
+        }
+        
         if ($('#objectDropdown option').length <= 1) {
-            loadCustomersDropdown(projects.fieldValueMap.project_company_id)
-                .then((customers) => {
-                    var selectedCustomerId = customers[0].id;
-
-                    if (selectedCustomerId) {
-                        loadObjectsDropdown(selectedCustomerId)
-                            .then(() => {
-                                // Enable all related controls
-                                $('#objectDropdown').prop('disabled', false);
-                                $('#addRowConfirm').prop('disabled', false);
-                                $('#newRowButton').prop('disabled', false);
-                            })
-                            .catch(error => {
-                                console.error('Ошибка при загрузке объектов:', error);
-                                // Disable all related controls
-                                $('#objectDropdown').prop('disabled', true);
-                                $('#addRowConfirm').prop('disabled', true);
-                                $('#newRowButton').prop('disabled', true);
-                            });
-                    }
+            loadObjectsDropdown(parentId)
+                .then(() => {
+                    $('#objectDropdown').prop('disabled', false);
+                    $('#addRowConfirm').prop('disabled', false);
+                    $('#newRowButton').prop('disabled', false);
                 })
-                .catch(() => {
-                    console.error('Ошибка при загрузке заказчика:', error);
+                .catch(error => {
+                    console.error('Ошибка при загрузке объектов:', error);
+                    showAlert('Не удалось загрузить список объектов', 'danger');
+                    $('#objectDropdown').prop('disabled', true);
+                    $('#addRowConfirm').prop('disabled', true);
+                    $('#newRowButton').prop('disabled', true);
                 });
         }
     });

@@ -4,32 +4,15 @@ from decorators import require_token
 
 bp = Blueprint('get', __name__, url_prefix='/get')
 
-# Получает список заказчиков
-@bp.route('/customers/<company_id>', methods=['GET'])
+# Получает список объектов проектирования по ID родителя (1 или 2 уровень иерархии)
+@bp.route('/objects/<parent_id>', methods=['GET'])
 @require_token
-def get_customers(token, company_id):
-
-    parent_id = current_app.config['OBJECT_LIST_ID'] # ID родительского списка "Объекты Проектирования"
-    customer_ct_id = current_app.config['CUSTOMER_CT_ID'] # content_type_id для папок Заказчиков
-
-    query_filter = f"item => item.ContentTypeId == Guid(\"{customer_ct_id}\") && item.GetLookupId(\"company_customer_lookup\") == Guid(\"{company_id}\")" # Фильтр по content_type_id и company_id
-
-    customer_data = vc.get_mp_children(token, parent_id, recursive=True, query=query_filter) # Используем get_mp_children с фильтром
-
-    if customer_data is None:
-        return jsonify({"error": "Не удалось получить список заказчиков из Vitro-CAD MP"}), 500
-
-    return jsonify(customer_data) # Возвращаем данные в JSON
-
-# Получает список объектов проектирования для конкретного заказчика
-@bp.route('/objects/<customer_id>', methods=['GET'])
-@require_token
-def get_objects(token, customer_id):
+def get_objects(token, parent_id):
     object_ct_id = current_app.config['OBJECT_CT_ID'] # content_type_id для папок Объектов Проектирования
 
     query_filter = f"item => item.ContentTypeId == Guid(\"{object_ct_id}\")" # Фильтр по content_type_id
 
-    object_data = vc.get_mp_children(token, customer_id, recursive=True, query=query_filter) # Используем get_mp_children с фильтром и customer_id
+    object_data = vc.get_mp_children(token, parent_id, recursive=True, query=query_filter) # Используем get_mp_children с фильтром и parent_id
 
     if object_data is None:
         return jsonify({"error": "Не удалось получить список объектов проектирования из Vitro-CAD MP"}), 500
