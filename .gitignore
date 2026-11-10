@@ -5,3 +5,4 @@ __pycache__/
 venv/
 env/
 templates/~$f10_template.xlsx
+*.log
