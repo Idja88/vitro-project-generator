@@ -11,8 +11,6 @@ class Config:
     VITRO_CAD_API_BASE_URL = os.getenv("VITRO_CAD_API_BASE_URL")
     VITRO_CAD_ADMIN_USERNAME = os.getenv("VITRO_CAD_ADMIN_USERNAME")
     VITRO_CAD_ADMIN_PASSWORD = os.getenv("VITRO_CAD_ADMIN_PASSWORD")
-    VITRO_CAD_AUTH_TOKEN = os.getenv("VITRO_CAD_AUTH_TOKEN")
-    VITRO_CAD_AUTH_TOKEN_MAX_AGE = int(os.getenv("VITRO_CAD_AUTH_TOKEN_MAX_AGE", 86400))
 
     PROJECT_LIST_ID = os.getenv("PROJECT_LIST_ID")
     MARK_LIST_ID = os.getenv("MARK_LIST_ID")
@@ -72,17 +70,13 @@ class ProductionConfig(Config):
 
 
 config = {
-    "development": DevelopmentConfig,
-    "production": ProductionConfig,
-    "testing": TestingConfig,
-    "default": DevelopmentConfig,  # Конфигурация по умолчанию - development
+    "dev": DevelopmentConfig,
+    "prod": ProductionConfig,
+    "test": TestingConfig,
 }
 
 
-# Функция для конфигурирования приложения
-def configure_app(app, config_name=None):
-    if not config_name:
-        config_name = os.getenv(
-            "FLASK_CONFIG"
-        )  # Определяем имя конфигурации из ENV или используем 'default'
-    app.config.from_object(config[config_name])  # Загружаем конфигурацию в app.config
+# Функция для конфигурирования приложения: FLASK_CONFIG (.env) = dev | prod | test
+def configure_app(app, config_name):
+    app.config.from_object(config[config_name])
+    app.config["FLASK_CONFIG"] = config_name  # единственный признак среды для кода приложения

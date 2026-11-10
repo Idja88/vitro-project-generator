@@ -1,6 +1,8 @@
 from flask import Blueprint, jsonify, current_app, request, url_for, make_response
 from loguru import logger
 
+from decorators import set_token_cookie
+
 bp = Blueprint("callback", __name__, url_prefix="/")
 
 
@@ -49,7 +51,9 @@ def vitro_cad_callback():
             )
 
         project_id = data["itemIdList"][0]
-        logger.info("Callback от Vitro-CAD: открытие генератора для проекта {}", project_id)
+        logger.info(
+            "Callback от Vitro-CAD: открытие генератора для проекта {}", project_id
+        )
 
         # Create response with redirect
         response = make_response()
@@ -65,18 +69,7 @@ def vitro_cad_callback():
         )
 
         # Set secure cookie with token
-        secure = not current_app.debug
-        max_age = current_app.config.get(
-            "VITRO_CAD_AUTH_TOKEN_MAX_AGE", 86400
-        )  # Default: 1 day
-        response.set_cookie(
-            "mp_token",
-            token,
-            max_age=max_age,
-            httponly=True,
-            secure=secure,
-            samesite="Lax",
-        )
+        set_token_cookie(response, token)
 
         return response
 
