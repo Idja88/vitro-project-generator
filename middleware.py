@@ -14,5 +14,5 @@ class PrefixMiddleware:
             environ['SCRIPT_NAME'] = self.prefix
             return self.app(environ, start_response)
         else:
-            start_response('404', [('Content-Type', 'text/plain')])
+            start_response('404 Not Found', [('Content-Type', 'text/plain')])
             return [b"This URL does not belong to the app."]
