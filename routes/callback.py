@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, current_app, request, url_for, make_response
+from loguru import logger
 
 bp = Blueprint("callback", __name__, url_prefix="/")
 
@@ -48,6 +49,7 @@ def vitro_cad_callback():
             )
 
         project_id = data["itemIdList"][0]
+        logger.info("Callback от Vitro-CAD: открытие генератора для проекта {}", project_id)
 
         # Create response with redirect
         response = make_response()
@@ -79,7 +81,7 @@ def vitro_cad_callback():
         return response
 
     except Exception as e:
-        current_app.logger.error(f"Error processing callback: {str(e)}")
+        logger.exception("Ошибка обработки callback от Vitro-CAD")
         return (
             jsonify({"exception": {"message": f"Ошибка обработки запроса: {str(e)}"}}),
             500,

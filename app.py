@@ -5,15 +5,19 @@ from routes import set, get, callback, export
 from decorators import require_token
 from werkzeug.middleware.proxy_fix import ProxyFix
 from middleware import PrefixMiddleware
+from logging_config import configure_logging
 
 def create_app():
     # Инициализация приложения
     app = Flask(__name__)
-    
+
     # Конфигурируем приложение
     env = os.getenv('FLASK_CONFIG', 'default')
     configure_app(app, env)
-    
+
+    # Единое логирование через loguru (перехватывает и Flask/Werkzeug)
+    configure_logging(app)
+
     # Применяем ProxyFix для правильной обработки заголовков за прокси
     if env == 'production':
         proxy_count = int(os.getenv('PROXY_COUNT', 1))

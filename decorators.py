@@ -1,5 +1,6 @@
 from functools import wraps
 from flask import request, jsonify, current_app
+from loguru import logger
 
 def require_token(f):
     @wraps(f)
@@ -19,7 +20,7 @@ def require_token(f):
 
         # Если токен все еще не найден, возвращаем ошибку
         if not token:
-            current_app.logger.error("Token is missing")
+            logger.warning("Запрос {} {} отклонён: отсутствует токен авторизации", request.method, request.path)
             return jsonify({'message': 'Отсутствует токен авторизации!'}), 401
         
         # Передаем токен в функцию
