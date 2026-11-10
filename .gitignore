@@ -1,8 +1,27 @@
+# Python
 __pycache__/
 *.pyc
+
+# Виртуальные окружения и секреты
 .env
 .venv/
 venv/
 env/
-templates/~$f10_template.xlsx
+
+# Логи loguru (LOG_FILE)
 *.log
+
+# Тесты
+tests/
+pytest.ini
+requirements-dev.txt
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Локальные настройки Claude Code
+.claude/
+
+# Временные файлы Excel при открытом шаблоне
+templates/~$f10_template.xlsx
