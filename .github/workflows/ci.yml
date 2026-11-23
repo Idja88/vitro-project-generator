@@ -1,0 +1,119 @@
+# CI/CD
+#
+# pull request и push в любую ветку: тесты и линтеры бэкенда и фронтенда, сборка Docker-образа.
+# push в main: образ публикуется в ghcr.io с тегами main и sha-<коммит>.
+# тег vX.Y.Z: образ публикуется с тегами X.Y.Z, X.Y и latest.
+
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*.*.*"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (ruff, pytest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - run: uv python install 3.12
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest --cov=vitro_generator --cov-report=term-missing
+
+  frontend:
+    name: Frontend (tsc, oxlint, vitest, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.node-version
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  docker:
+    name: Docker image
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      # Публикуем только из main и тегов релизов, не из веток и PR
+      PUBLISH: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login to ghcr.io
+        if: env.PUBLISH == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=sha-
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+          flavor: |
+            latest=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ env.PUBLISH == 'true' }}
+          # Для веток и PR образ загружается в локальный Docker раннера, чтобы его запустить
+          load: ${{ env.PUBLISH != 'true' }}
+          # Локальный тег vitro-generator:ci нужен только для smoke-теста; при публикации его нет
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            ${{ env.PUBLISH != 'true' && 'vitro-generator:ci' || '' }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test (контейнер стартует, /healthz и страница отвечают)
+        if: env.PUBLISH != 'true'
+        run: |
+          docker run -d --name generator -p 8000:8000 -e FLASK_CONFIG=prod -e PREFIX=/generator vitro-generator:ci
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8000/generator/healthz && break
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8000/generator/healthz
+          # без cookie страница проекта в prod отвечает 401 (автологина в prod нет)
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/generator/project/x)" = "401"
+          docker logs generator

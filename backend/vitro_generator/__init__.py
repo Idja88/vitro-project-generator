@@ -62,6 +62,11 @@ def create_app():
     app.register_blueprint(api.bp)
     app.register_blueprint(frontend.bp)
 
+    @app.get("/healthz")
+    def healthz():
+        """Проверка живости для Docker/nginx: без авторизации и без обращения к Vitro-CAD."""
+        return {"status": "ok"}
+
     if app.config.get("FLASK_CONFIG") != "prod" and app.config.get("VITRO_CAD_ADMIN_USERNAME"):
         logger.warning(
             "Среда {}: запросы без cookie будут авторизованы автологином под {}",

@@ -96,3 +96,14 @@ def test_index_renders_app_config_for_frontend(auth_client):
 
 def test_index_requires_token(client, vitro, prod_env):
     assert client.get("/project/P1").status_code == 401
+
+
+def test_healthz_without_auth(client, prod_env):
+    response = client.get("/healthz")
+    assert response.status_code == 200
+    assert response.get_json() == {"status": "ok"}
+
+
+def test_healthz_behind_prefix(prod_app):
+    response = prod_app.test_client().get("/generator/healthz", base_url=PROD_BASE)
+    assert response.status_code == 200

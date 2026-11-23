@@ -26,3 +26,7 @@ frontend/dist/
 
 # Временные файлы Excel при открытом шаблоне
 ~$*.xlsx
+
+# Артефакты сборки Python-пакета
+build/
+dist/
