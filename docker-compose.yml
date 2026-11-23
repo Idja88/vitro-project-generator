@@ -1,0 +1,20 @@
+# Запуск на сервере:
+#   1. положить рядом .env (по образцу .env.example) и этот файл
+#   2. docker compose pull && docker compose up -d
+# Обновление: поменять GENERATOR_VERSION в .env (или оставить latest) и повторить п. 2.
+# Локальная сборка без реестра: docker compose up -d --build
+
+services:
+  generator:
+    image: ghcr.io/idja88/vitro-project-generator:${GENERATOR_VERSION:-latest}
+    build: .
+    env_file: .env
+    # Только localhost: снаружи приложение доступно через nginx (location /generator → 127.0.0.1:8000)
+    ports:
+      - "127.0.0.1:${GENERATOR_PORT:-8000}:8000"
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"

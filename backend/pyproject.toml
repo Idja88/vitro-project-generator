@@ -1,0 +1,48 @@
+[project]
+name = "vitro-generator"
+version = "0.2.0"
+description = "Генератор проектов для Vitro-CAD MP"
+requires-python = ">=3.12"
+dependencies = [
+    "flask>=3.1",
+    "requests>=2.32",
+    "python-dotenv>=1.0",
+    "gunicorn>=23.0; sys_platform != 'win32'",
+    "jsondiff>=2.2",
+    "openpyxl>=3.1",
+    "loguru>=0.7",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "responses>=0.25",
+    "ruff>=0.8",
+]
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["vitro_generator*"]
+
+[tool.setuptools.package-data]
+vitro_generator = ["resources/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+# conftest выставляет переменные окружения до импорта приложения
+"tests/conftest.py" = ["E402"]
