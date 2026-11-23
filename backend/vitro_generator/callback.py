@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, current_app, request, url_for, make_response
 from loguru import logger
 
-from decorators import set_token_cookie
+from vitro_generator.auth import set_token_cookie
 
 bp = Blueprint("callback", __name__, url_prefix="/")
 

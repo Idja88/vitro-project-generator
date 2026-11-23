@@ -2,7 +2,7 @@ from functools import wraps
 from flask import request, jsonify, current_app, make_response
 from loguru import logger
 
-import vitro_cad_api as vc
+from vitro_generator import vitro_cad_api as vc
 
 TOKEN_COOKIE = "mp_token"
 

@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, current_app
-import vitro_cad_api as vc
-from decorators import require_token
+from vitro_generator import vitro_cad_api as vc
+from vitro_generator.auth import require_token
 
 bp = Blueprint('get', __name__, url_prefix='/get')
 

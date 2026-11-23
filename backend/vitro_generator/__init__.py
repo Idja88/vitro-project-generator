@@ -1,11 +1,12 @@
 import os
 from flask import Flask, render_template
-from config import configure_app
-from routes import set, get, callback, export
-from decorators import require_token
+from vitro_generator.config import configure_app
+from vitro_generator import callback
+from vitro_generator.legacy import set, get, export
+from vitro_generator.auth import require_token
 from werkzeug.middleware.proxy_fix import ProxyFix
-from middleware import PrefixMiddleware
-from logging_config import configure_logging
+from vitro_generator.middleware import PrefixMiddleware
+from vitro_generator.logging_config import configure_logging
 from loguru import logger
 
 
@@ -72,9 +73,3 @@ def create_app():
 
     return app
 
-
-if __name__ == "__main__":
-    application = create_app()
-    application.run(
-        host="0.0.0.0", port=5000, debug=application.config.get("DEBUG", False)
-    )

@@ -2,8 +2,8 @@ import copy
 from flask import Blueprint, jsonify, request, current_app
 from jsondiff import diff
 from loguru import logger
-import vitro_cad_api as vc
-from decorators import require_token
+from vitro_generator import vitro_cad_api as vc
+from vitro_generator.auth import require_token
 
 bp = Blueprint("set", __name__, url_prefix="/set")
 

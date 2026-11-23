@@ -5,8 +5,8 @@ from io import BytesIO
 from flask import Blueprint, jsonify, send_file, current_app
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
-import vitro_cad_api as vc
-from decorators import require_token
+from vitro_generator import vitro_cad_api as vc
+from vitro_generator.auth import require_token
 
 bp = Blueprint('export', __name__, url_prefix='/export')
 
@@ -25,7 +25,7 @@ def export_project_to_excel(token, project_id):
             return jsonify({'error': 'Матрица выбора отсутствует'}), 400
         
         # Путь к шаблону
-        template_path = os.path.join(os.path.dirname(__file__), '..', 'templates', 'f10_template.xlsx')
+        template_path = os.path.join(current_app.root_path, "resources", "f10_template.xlsx")
 
         # Проверяем, существует ли файл шаблона
         if not os.path.exists(template_path):
