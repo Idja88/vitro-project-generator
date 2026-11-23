@@ -13,6 +13,7 @@ from vitro_generator.services.export_f10 import build_f10
 from vitro_generator.services.matrix import lookup_name, parse_matrix, project_code, validate_matrix
 from vitro_generator.services.preview import plan_actions
 from vitro_generator.services.structure import VitroApiError, apply_matrix
+from vitro_generator.vitro_cad_api import VitroAuthError
 
 bp = Blueprint("api_v1", __name__, url_prefix="/api/v1")
 
@@ -68,6 +69,8 @@ def run_apply_matrix(token, project_id):
 
     try:
         return jsonify(apply_matrix(token, request_data)), 201
+    except VitroAuthError:
+        raise  # обрабатывается в create_app: 401 «сессия истекла»
     except VitroApiError as e:
         logger.error("Ошибка Vitro-CAD при создании структуры проекта {}: {}", project_id, e)
         return jsonify({"error": str(e)}), 500
@@ -87,6 +90,8 @@ def send_f10(token, project_id):
 
         buffer, filename = build_f10(token, project)
         return send_file(buffer, as_attachment=True, download_name=filename, mimetype=XLSX_MIMETYPE)
+    except VitroAuthError:
+        raise
     except Exception as e:
         logger.exception("Ошибка экспорта Ф10 для проекта {}", project_id)
         return jsonify({"error": str(e)}), 500

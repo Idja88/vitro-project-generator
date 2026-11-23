@@ -61,9 +61,13 @@ class FakeVitro:
         items=None,
         get_item_none=False,
         login_ok=True,
+        unauthorized=False,
     ):
         self.calls = []
-        self.login_ok = login_ok  # get_mp_token: "ADMIN-TOKEN" или None
+        self.login_ok = login_ok
+        self.unauthorized = (
+            unauthorized  # Vitro-CAD отвечает 401 на любой вызов с токеном  # get_mp_token: "ADMIN-TOKEN" или None
+        )
         self.counter = 0
         self.fail_on = set(fail_on)  # content_type_id, на которых update_mp_list вернёт None
         self.anchor = anchor  # найден ли якорь шаблона в папке проекта
@@ -89,6 +93,14 @@ class FakeVitro:
             return payloads
         return [p for p in payloads if p.get("content_type_id") == ct_id]
 
+    def _check_token(self):
+        if self.unauthorized:
+            # импорт здесь: conftest импортирует fakes до установки тестового окружения,
+            # а импорт пакета приложения на уровне модуля загрузил бы конфиг раньше времени
+            from vitro_generator.vitro_cad_api import VitroAuthError
+
+            raise VitroAuthError("401")
+
     def _new_id(self, prefix):
         self.counter += 1
         return f"{prefix}-{self.counter}"
@@ -101,6 +113,7 @@ class FakeVitro:
 
     def update_mp_list(self, token, data):
         self.calls.append(("update_mp_list", data))
+        self._check_token()
         payload = data[0]
         if payload.get("content_type_id") in self.fail_on:
             return None
@@ -114,6 +127,7 @@ class FakeVitro:
 
     def get_mp_children(self, token, parent_id, recursive=False, query=None):
         self.calls.append(("get_mp_children", parent_id, recursive, query))
+        self._check_token()
         if parent_id in (IDS["MARK_TEMPLATE_FOLDER_ID"], IDS["PROJECT_TEMPLATE_FOLDER_ID"]):
             return [{"id": f"{parent_id}-child"}]
         if parent_id == IDS["MARK_LIST_ID"]:
@@ -128,6 +142,7 @@ class FakeVitro:
 
     def get_mp_item(self, token, item_id, query=None):
         self.calls.append(("get_mp_item", item_id))
+        self._check_token()
         if self.get_item_none:
             return None
         if self.items is not None:
