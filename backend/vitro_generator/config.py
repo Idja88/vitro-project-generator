@@ -38,6 +38,11 @@ class Config:
 
     VITRO_CAD_API_TIMEOUT = int(os.getenv("VITRO_CAD_API_TIMEOUT", 30))
 
+    # Сборка React (npm run build). По умолчанию frontend/dist рядом с backend/; в Docker задаётся явно
+    FRONTEND_DIST = os.getenv("FRONTEND_DIST") or os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist")
+    )
+
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
     LOG_FILE = os.getenv("LOG_FILE")
 
