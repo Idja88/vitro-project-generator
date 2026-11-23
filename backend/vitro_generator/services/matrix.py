@@ -25,6 +25,19 @@ def parse_matrix(raw):
     return raw
 
 
+def project_code(fields):
+    """Код проекта: Vitro-CAD вычисляет его в project_code_auto; code — прежнее имя поля."""
+    return fields.get("project_code_auto") or fields.get("code") or ""
+
+
+def lookup_name(fields, name):
+    """Отображаемое имя элемента, на который ссылается поле-lookup (например, ГИП), или None."""
+    value = fields.get(name)
+    if isinstance(value, dict):
+        return (value.get("fieldValueMap") or {}).get("name")
+    return None
+
+
 def mark_key(mark):
     """Марка идентифицируется парой id + номер раздела (АР1 и АР2 — разные колонки)."""
     return f"{mark['id']}|{mark.get('number') or ''}"

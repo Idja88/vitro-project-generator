@@ -30,7 +30,7 @@ def test_project_is_normalized(auth_client, vitro_factory):
         "id": "P1",
         "fieldValueMap": {
             "name": "Проект",
-            "code": "PRJ",
+            "project_code_auto": "PRJ",
             "chief_project_engineer": {"fieldValueMap": {"name": "Иванов И.И."}},
             "object_list_lookup_tree": {"id": "SITE-1"},
             "is_created_by_generator": True,
@@ -155,7 +155,7 @@ def test_f10_respects_mark_order(auth_client, vitro_factory):
         "id": "P1",
         "fieldValueMap": {
             "name": "Проект",
-            "code": "PRJ",
+            "project_code_auto": "PRJ",
             "chief_project_engineer": {"fieldValueMap": {"name": "ГИП"}},
             "selection_matrix": selection,
         },

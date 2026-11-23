@@ -37,6 +37,7 @@ def configure_logging(app):
         level=level,
         format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | "
         "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+        diagnose=False,  # не выводить значения переменных в трассировках: там токены Vitro-CAD
     )
     if log_file:
         logger.add(
@@ -46,6 +47,7 @@ def configure_logging(app):
             retention="14 days",
             encoding="utf-8",
             enqueue=True,
+            diagnose=False,
         )
 
     # Стандартный logging (включая app.logger и werkzeug) → loguru

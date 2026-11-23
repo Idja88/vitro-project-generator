@@ -10,7 +10,7 @@ from loguru import logger
 from vitro_generator import vitro_cad_api as vc
 from vitro_generator.auth import require_token
 from vitro_generator.services.export_f10 import build_f10
-from vitro_generator.services.matrix import parse_matrix, validate_matrix
+from vitro_generator.services.matrix import lookup_name, parse_matrix, project_code, validate_matrix
 from vitro_generator.services.preview import plan_actions
 from vitro_generator.services.structure import VitroApiError, apply_matrix
 
@@ -27,16 +27,16 @@ def _field(item, name):
 
 
 def project_dto(item):
-    chief = _field(item, "chief_project_engineer") or {}
-    site = _field(item, "object_list_lookup_tree") or {}
-    raw_matrix = _field(item, "selection_matrix")
+    fields = item.get("fieldValueMap") or {}
+    site = fields.get("object_list_lookup_tree") or {}
+    raw_matrix = fields.get("selection_matrix")
     return {
         "id": item["id"],
-        "name": _field(item, "name"),
-        "code": _field(item, "code"),
-        "chief": (chief.get("fieldValueMap") or {}).get("name"),
+        "name": fields.get("name"),
+        "code": project_code(fields),
+        "chief": lookup_name(fields, "chief_project_engineer"),
         "objectParentId": site.get("id"),
-        "isGenerated": bool(_field(item, "is_created_by_generator")),
+        "isGenerated": bool(fields.get("is_created_by_generator")),
         "matrix": parse_matrix(raw_matrix) if raw_matrix else None,
     }
 

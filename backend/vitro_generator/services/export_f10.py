@@ -17,9 +17,11 @@ from vitro_generator import vitro_cad_api as vc
 from vitro_generator.services.matrix import (
     active_objects,
     display_name,
+    lookup_name,
     object_has_mark,
     ordered_active_marks,
     parse_matrix,
+    project_code,
 )
 
 FIRST_MARK_COL = 6  # F
@@ -91,7 +93,7 @@ def create_excel_from_template(token, project, path):
     ws = wb.active
 
     fields = project["fieldValueMap"]
-    project_code = fields["code"]
+    code = project_code(fields)
     matrix = parse_matrix(fields["selection_matrix"])
     objects = active_objects(matrix)
 
@@ -107,8 +109,8 @@ def create_excel_from_template(token, project, path):
 
     # Метаданные
     ws["B1"] = fields["name"]
-    ws["F2"] = project_code
-    ws["N3"] = fields["chief_project_engineer"]["fieldValueMap"]["name"]
+    ws["F2"] = code
+    ws["N3"] = lookup_name(fields, "chief_project_engineer")
     ws["S3"] = datetime.now().strftime("%d.%m.%Y")
 
     # Заголовки марок
@@ -128,7 +130,7 @@ def create_excel_from_template(token, project, path):
     # Объекты и пересечения
     for i, obj in enumerate(objects):
         row = FIRST_OBJECT_ROW + i
-        ws.cell(row=row, column=2, value=f"{project_code}-{obj['number']}" if obj.get("number") else project_code)
+        ws.cell(row=row, column=2, value=f"{code}-{obj['number']}" if obj.get("number") else code)
         ws.cell(row=row, column=3, value=obj["name"])
         for j, mark in enumerate(columns):
             if object_has_mark(obj, mark["key"]):

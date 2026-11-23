@@ -579,7 +579,7 @@ $(document).ready(function () {
         return new Promise((resolve, reject) => {
             $.getJSON(`/get/projects/${projectId}`, function (project) {
                 $('#projectName').val(`${project.fieldValueMap.name}`);
-                $('#projectCode').val(`${project.fieldValueMap.code}`);
+                $('#projectCode').val(`${project.fieldValueMap.project_code_auto || project.fieldValueMap.code || ''}`);
                 $('#projectChief').val(`${project.fieldValueMap.chief_project_engineer.fieldValueMap.name}`);
                 projects = project; // Сохраняем для дальнейшего использования
                 resolve(project);

@@ -29,7 +29,7 @@ def project_item(selection_matrix, name="Проект", code="PRJ", chief="Ив�
         "id": "P1",
         "fieldValueMap": {
             "name": name,
-            "code": code,
+            "project_code_auto": code,
             "chief_project_engineer": {"fieldValueMap": {"name": chief}},
             "selection_matrix": selection_matrix,
         },
@@ -231,3 +231,31 @@ def test_e11_without_template_builds_simple_sheet(auth_client, vitro_factory, mo
     assert row_values(ws, 2, 1, 5) == ["Корпус", "True", "True", "True", "True"]
     assert row_values(ws, 3, 1, 5) == ["Склад", "True", "False", "False", "False"]
     assert ws.cell(row=4, column=1).value is None
+
+
+# --- поля карточки проекта ---
+
+
+def test_legacy_code_field_is_still_supported(auth_client, vitro_factory, frozen_date):
+    """Прежнее имя поля кода проекта `code` читается, если project_code_auto нет."""
+    project = project_item(SAMPLE_MATRIX)
+    project["fieldValueMap"]["code"] = project["fieldValueMap"].pop("project_code_auto")
+    response, _ = export(auth_client, vitro_factory, project=project)
+    ws = sheet(response)
+
+    assert response.status_code == 200
+    assert ws["F2"].value == "PRJ"
+    assert ws["B11"].value == "PRJ-1"
+
+
+def test_project_without_code_and_chief_still_exports(auth_client, vitro_factory, frozen_date):
+    project = project_item(SAMPLE_MATRIX)
+    del project["fieldValueMap"]["project_code_auto"]
+    del project["fieldValueMap"]["chief_project_engineer"]
+    response, _ = export(auth_client, vitro_factory, project=project)
+    ws = sheet(response)
+
+    assert response.status_code == 200
+    assert ws["F2"].value is None
+    assert ws["N3"].value is None
+    assert ws["C11"].value == "Корпус"
