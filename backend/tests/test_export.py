@@ -1,4 +1,4 @@
-"""Tier 2: GET /export/excel/<project_id> — экспорт Формы 10."""
+"""Tier 2: GET /api/v1/projects/<project_id>/f10 — экспорт Формы 10."""
 
 import json
 from datetime import datetime
@@ -73,7 +73,7 @@ MARK_ITEMS = {
 def export(auth_client, vitro_factory, selection_matrix=SAMPLE_MATRIX, mark_items=MARK_ITEMS, project=None):
     items = {"P1": project if project is not None else project_item(selection_matrix), **mark_items}
     fake = vitro_factory(items=items)
-    return auth_client.get("/export/excel/P1"), fake
+    return auth_client.get("/api/v1/projects/P1/f10"), fake
 
 
 def sheet(response):
@@ -89,7 +89,7 @@ def row_values(ws, row, first_col, last_col):
 
 def test_e1_project_not_found(auth_client, vitro_factory):
     vitro_factory(items={})
-    response = auth_client.get("/export/excel/P1")
+    response = auth_client.get("/api/v1/projects/P1/f10")
 
     assert response.status_code == 404
     assert response.get_json() == {"error": "Проект не найден"}
@@ -103,7 +103,7 @@ def test_e1_missing_selection_matrix(auth_client, vitro_factory):
 
 
 def test_export_requires_token(client, vitro, prod_env):
-    assert client.get("/export/excel/P1").status_code == 401
+    assert client.get("/api/v1/projects/P1/f10").status_code == 401
 
 
 # --- E2: метаданные ---

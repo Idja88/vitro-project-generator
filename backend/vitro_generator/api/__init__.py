@@ -55,7 +55,7 @@ def _list_url(list_id):
     return f"{base}/list/{list_id}" if base and list_id else None
 
 
-# --- общие обработчики (их же используют старые маршруты legacy/) ---
+# --- обработчики создания структуры и Ф10 ---
 
 
 def run_apply_matrix(token, project_id):

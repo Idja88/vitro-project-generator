@@ -82,18 +82,6 @@ def test_production_has_no_dev_autologin(prod_app, vitro):
     assert vitro.calls_of("get_mp_token") == []
 
 
-def test_index_renders_app_config_for_frontend(auth_client):
-    response = auth_client.get("/project/P1")
-    html = response.data.decode("utf-8")
-
-    assert response.status_code == 200
-    assert 'PROJECT_ID: "P1"' in html
-    assert 'PREFIX: "/generator"' in html
-    assert 'OBJECT_LIST_ID: "L-OBJ"' in html
-    assert 'MARK_LIST_ID: "L-MARK"' in html
-    assert 'VITRO_CAD_API_BASE_URL: "http://vitro.test"' in html
-
-
 def test_index_requires_token(client, vitro, prod_env):
     assert client.get("/project/P1").status_code == 401
 

@@ -1,4 +1,4 @@
-"""Tier 1: POST /set/create/<project_id> — применение матрицы выбора к дереву папок."""
+"""Tier 1: POST /api/v1/projects/<project_id>/structure — применение матрицы выбора к дереву папок."""
 
 import json
 
@@ -9,7 +9,7 @@ from tests.fakes import ANCHOR_ID, BIN_ITEM_ID, NULL_OBJECT_ID, mark, matrix, ob
 
 def post(client, selection_matrix, project_id="P1"):
     return client.post(
-        f"/set/create/{project_id}",
+        f"/api/v1/projects/{project_id}/structure",
         data=json.dumps(selection_matrix),
         content_type="application/json",
     )
@@ -329,12 +329,12 @@ def test_s15b_unexpected_exception_is_logged_with_traceback(auth_client, vitro_f
     assert any(r["exception"] is not None and "Непредвиденная ошибка" in r["message"] for r in log_capture)
 
 
-# --- S16–S19: контракт маршрута ---
+# --- S16–S18: контракт маршрута ---
 
 
 @pytest.mark.parametrize("raw_body", ["null", '{"id": "P1"}', "not json at all", "[]"])
 def test_s16_invalid_body_returns_400(auth_client, vitro, raw_body):
-    response = auth_client.post("/set/create/P1", data=raw_body, content_type="application/json")
+    response = auth_client.post("/api/v1/projects/P1/structure", data=raw_body, content_type="application/json")
 
     assert response.status_code == 400
     assert response.get_json() == {"error": "Некорректный формат матрицы выбора"}
@@ -354,14 +354,6 @@ def test_s18_missing_project_folder_for_link_is_an_error(auth_client, vitro_fact
 
     assert response.status_code == 500
     assert "ссылки" in response.get_json()["error"]
-
-
-def test_s19_update_endpoint_echoes_body(auth_client):
-    payload = {"id": "P1", "objects": []}
-    response = auth_client.post("/set/update/P1", json=payload)
-
-    assert response.status_code == 201
-    assert response.get_json() == payload
 
 
 # --- S20: идентификаторы с символами запроса отклоняются (бывшее слабое место №7) ---

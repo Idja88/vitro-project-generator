@@ -6,7 +6,6 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from vitro_generator import api, callback, frontend
 from vitro_generator.config import configure_app
-from vitro_generator.legacy import export, get, set
 from vitro_generator.logging_config import configure_logging
 from vitro_generator.middleware import PrefixMiddleware
 
@@ -41,24 +40,8 @@ def create_app():
         app.config["SESSION_COOKIE_PATH"] = prefix
         app.config["SESSION_COOKIE_SECURE"] = True
 
-    @app.context_processor
-    def inject_globals():
-        prefix = os.getenv("PREFIX", "")
-        object_list_id = os.getenv("OBJECT_LIST_ID", "")
-        mark_list_id = os.getenv("MARK_LIST_ID", "")
-        vitro_cad_api_base_url = os.getenv("VITRO_CAD_API_BASE_URL", "")
-        return {
-            "app_prefix": prefix,
-            "object_list_id": object_list_id,
-            "mark_list_id": mark_list_id,
-            "vitro_cad_api_base_url": vitro_cad_api_base_url,
-        }
-
     # Регистрируем Blueprints
-    app.register_blueprint(set.bp)
-    app.register_blueprint(get.bp)
     app.register_blueprint(callback.bp)
-    app.register_blueprint(export.bp)
     app.register_blueprint(api.bp)
     app.register_blueprint(frontend.bp)
 

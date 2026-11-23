@@ -29,7 +29,7 @@ build-backend = "setuptools.build_meta"
 include = ["vitro_generator*"]
 
 [tool.setuptools.package-data]
-vitro_generator = ["resources/*", "templates/*", "static/*", "static/**/*"]
+vitro_generator = ["resources/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

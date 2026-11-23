@@ -49,6 +49,6 @@ def test_cookie_lifetime_is_fixed_to_one_day(client):
 
 def test_token_from_callback_cookie_is_accepted_by_protected_routes(client, vitro):
     client.post("/callback", json={"itemIdList": ["P1"]}, headers={"Authorization": "TOK"})
-    response = client.get("/get/marks")
+    response = client.get("/api/v1/marks")
 
     assert response.status_code == 200

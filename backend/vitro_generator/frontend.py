@@ -2,13 +2,13 @@
 
 index.html отдаётся на /project/<id> с префиксом приложения в <base href>: сборка использует
 относительные пути, поэтому ассеты и /api/v1 находятся и локально (/), и за nginx (/generator/).
-Если сборки нет (например, при разработке бэкенда), /project/<id> отдаёт прежнюю jQuery-страницу.
+Если сборки нет, /project/<id> отвечает 503 с подсказкой собрать фронтенд.
 """
 
 import os
 from functools import cache
 
-from flask import Blueprint, Response, abort, current_app, render_template, request, send_from_directory
+from flask import Blueprint, Response, abort, current_app, request, send_from_directory
 
 from vitro_generator.auth import require_token
 
@@ -40,16 +40,13 @@ def react_index():
 def index(token, project_id):
     html = react_index()
     if html is None:
-        return render_template("index.html", project_id=project_id)
+        return Response(
+            "Фронтенд не собран: выполните npm run build в каталоге frontend/ (или задайте FRONTEND_DIST).",
+            status=503,
+            mimetype="text/plain",
+        )
     # request.script_root — префикс за PrefixMiddleware ("/generator") или "" локально
     return Response(html.replace(BASE_TAG, f'<base href="{request.script_root}/" />', 1), mimetype="text/html")
-
-
-@bp.route("/legacy/project/<project_id>")
-@require_token
-def legacy_index(token, project_id):
-    """Прежний jQuery-интерфейс — для сравнения на время приёмки React-версии."""
-    return render_template("index.html", project_id=project_id)
 
 
 @bp.route("/assets/<path:filename>")

@@ -17,7 +17,7 @@ TEST_ENV = {
     "VITRO_CAD_API_TIMEOUT": "30",
     "LOG_LEVEL": "DEBUG",
     "LOG_FILE": "",
-    # нет сборки React: /project/<id> отдаёт jQuery-шаблон; test_frontend.py подставляет свою
+    # нет сборки React: /project/<id> отвечает 503; test_frontend.py подставляет свою сборку
     "FRONTEND_DIST": os.path.join(os.path.dirname(__file__), "no-frontend-build"),
     # для production-режима (test_app_config.py)
     "SERVER_NAME": "example.test",

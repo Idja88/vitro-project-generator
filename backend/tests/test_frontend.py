@@ -1,4 +1,4 @@
-"""Раздача сборки React: index.html с префиксом в <base href>, ассеты, запасной jQuery-шаблон."""
+"""Раздача сборки React: index.html с префиксом в <base href>, ассеты, ошибка без сборки."""
 
 import pytest
 
@@ -46,13 +46,11 @@ def test_assets_and_favicon_are_served(react_client):
     assert react_client.get("/assets/missing.js").status_code == 404
 
 
-def test_legacy_page_still_available(react_client):
-    response = react_client.get("/legacy/project/P1")
-    assert 'PROJECT_ID: "P1"' in response.data.decode("utf-8")
+def test_without_build_project_page_explains_how_to_build(auth_client):
+    response = auth_client.get("/project/P1")
 
-
-def test_without_build_project_page_falls_back_to_legacy(auth_client):
-    assert 'PROJECT_ID: "P1"' in auth_client.get("/project/P1").data.decode("utf-8")
+    assert response.status_code == 503
+    assert "npm run build" in response.data.decode("utf-8")
 
 
 def test_project_page_requires_token(client, vitro, prod_env):
