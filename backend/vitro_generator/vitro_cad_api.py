@@ -1,4 +1,5 @@
 import json
+
 import requests
 from flask import current_app
 from loguru import logger
@@ -24,9 +25,7 @@ def get_mp_token():
     }
     url_string = f"{_base_url()}/api/security/login"
     try:
-        with requests.post(
-            url=url_string, json=mp_login, timeout=_timeout()
-        ) as response:
+        with requests.post(url=url_string, json=mp_login, timeout=_timeout()) as response:
             response.raise_for_status()
             return response.json().get("token")
     except requests.exceptions.RequestException as e:
@@ -60,9 +59,7 @@ def get_mp_item(mp_token, item_id, query=None):
     url_string = f"{_base_url()}/api/item/get/{item_id}"
     payload = {"query": query} if query else None
     try:
-        with requests.post(
-            url=url_string, headers=_headers(mp_token), json=payload, timeout=_timeout()
-        ) as response:
+        with requests.post(url=url_string, headers=_headers(mp_token), json=payload, timeout=_timeout()) as response:
             response.raise_for_status()
             response_json = response.json()
             if response_json:
@@ -80,9 +77,7 @@ def get_mp_children(mp_token, parent_id, recursive=False, query=None):
     url_string = f"{_base_url()}/api/item/{endpoint}/{parent_id}"
     payload = {"query": query} if query else None
     try:
-        with requests.post(
-            url=url_string, headers=_headers(mp_token), json=payload, timeout=_timeout()
-        ) as response:
+        with requests.post(url=url_string, headers=_headers(mp_token), json=payload, timeout=_timeout()) as response:
             response.raise_for_status()
             result = response.json()
             logger.debug(
@@ -108,13 +103,9 @@ def get_mp_children(mp_token, parent_id, recursive=False, query=None):
 def copy_mp_item(mp_token, to_item_id, data):
     url_string = f"{_base_url()}/api/item/copy/{to_item_id}"
     try:
-        with requests.post(
-            url=url_string, headers=_headers(mp_token), json=data, timeout=_timeout()
-        ) as response:
+        with requests.post(url=url_string, headers=_headers(mp_token), json=data, timeout=_timeout()) as response:
             response.raise_for_status()
-            logger.debug(
-                "copy_mp_item: {} элемент(ов) скопировано в {}", len(data), to_item_id
-            )
+            logger.debug("copy_mp_item: {} элемент(ов) скопировано в {}", len(data), to_item_id)
             return True
     except requests.exceptions.RequestException as e:
         logger.error("Ошибка copy_mp_item (to_item_id={}): {}", to_item_id, e)
@@ -125,9 +116,7 @@ def copy_mp_item(mp_token, to_item_id, data):
 def delete_mp_item(mp_token, data):
     url_string = f"{_base_url()}/api/item/delete"
     try:
-        with requests.post(
-            url=url_string, headers=_headers(mp_token), json=data, timeout=_timeout()
-        ) as response:
+        with requests.post(url=url_string, headers=_headers(mp_token), json=data, timeout=_timeout()) as response:
             response.raise_for_status()
             result = response.json()
             logger.debug("delete_mp_item: {} → {}", data, result)
@@ -141,9 +130,7 @@ def delete_mp_item(mp_token, data):
 def restore_mp_item(mp_token, item_id):
     url_string = f"{_base_url()}/api/item/restore/{item_id}"
     try:
-        with requests.post(
-            url=url_string, headers=_headers(mp_token), timeout=_timeout()
-        ) as response:
+        with requests.post(url=url_string, headers=_headers(mp_token), timeout=_timeout()) as response:
             response.raise_for_status()
             logger.debug("restore_mp_item: элемент {} восстановлен", item_id)
             return True
@@ -156,9 +143,7 @@ def restore_mp_item(mp_token, item_id):
 def set_mp_item_unique_permission(mp_token, data):
     url_string = f"{_base_url()}/api/security/setItemUniquePermission"
     try:
-        with requests.post(
-            url=url_string, headers=_headers(mp_token), json=data, timeout=_timeout()
-        ) as response:
+        with requests.post(url=url_string, headers=_headers(mp_token), json=data, timeout=_timeout()) as response:
             response.raise_for_status()
             logger.debug("set_mp_item_unique_permission: {}", data)
             return True

@@ -1,5 +1,6 @@
 from functools import wraps
-from flask import request, jsonify, current_app, make_response
+
+from flask import current_app, jsonify, make_response, request
 from loguru import logger
 
 from vitro_generator import vitro_cad_api as vc
@@ -60,9 +61,7 @@ def require_token(f):
                 kwargs["token"] = token
                 response = make_response(f(*args, **kwargs))
                 return set_token_cookie(response, token)
-            logger.error(
-                "Dev-автологин не удался: проверьте VITRO_CAD_ADMIN_USERNAME/PASSWORD"
-            )
+            logger.error("Dev-автологин не удался: проверьте VITRO_CAD_ADMIN_USERNAME/PASSWORD")
 
         logger.warning(
             "Запрос {} {} отклонён: отсутствует токен авторизации",

@@ -63,19 +63,19 @@ class FakeVitro:
         login_ok=True,
     ):
         self.calls = []
-        self.login_ok = login_ok               # get_mp_token: "ADMIN-TOKEN" или None
+        self.login_ok = login_ok  # get_mp_token: "ADMIN-TOKEN" или None
         self.counter = 0
-        self.fail_on = set(fail_on)          # content_type_id, на которых update_mp_list вернёт None
-        self.anchor = anchor                 # найден ли якорь шаблона в папке проекта
-        self.bin_found = bin_found           # находится ли папка в корзине при восстановлении
-        self.departments = departments       # principal_lookup марки (None/[] = подразделение не указано)
+        self.fail_on = set(fail_on)  # content_type_id, на которых update_mp_list вернёт None
+        self.anchor = anchor  # найден ли якорь шаблона в папке проекта
+        self.bin_found = bin_found  # находится ли папка в корзине при восстановлении
+        self.departments = departments  # principal_lookup марки (None/[] = подразделение не указано)
         self.mark_lookup_empty = mark_lookup_empty  # поиск марки в L-MARK вернёт []
         self.copy_ok = copy_ok
         self.delete_ok = delete_ok
         self.restore_ok = restore_ok
         self.permission_ok = permission_ok
-        self.items = items                   # id -> элемент для get_mp_item; None = универсальный ответ
-        self.get_item_none = get_item_none   # get_mp_item всегда None
+        self.items = items  # id -> элемент для get_mp_item; None = универсальный ответ
+        self.get_item_none = get_item_none  # get_mp_item всегда None
 
     # --- вспомогательные методы для assert'ов ---
 
@@ -152,6 +152,7 @@ class FakeVitro:
 
 
 # --- фабрики матрицы выбора ---
+
 
 def mark(id_, name, number="", folder="", to_remove=False, to_restore=False, deleted=False):
     return {

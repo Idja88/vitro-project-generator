@@ -1,4 +1,5 @@
 """Tier 3: create_app — выбор конфигурации, production-обёртки, рендер страницы."""
+
 import pytest
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -49,7 +50,9 @@ def test_production_request_outside_prefix_is_404(prod_app):
 
 def test_production_callback_without_prefix_is_404(prod_app):
     client = prod_app.test_client()
-    response = client.post("/callback", base_url=PROD_BASE, json={"itemIdList": ["P1"]}, headers={"Authorization": "TOK"})
+    response = client.post(
+        "/callback", base_url=PROD_BASE, json={"itemIdList": ["P1"]}, headers={"Authorization": "TOK"}
+    )
 
     assert response.status_code == 404
 

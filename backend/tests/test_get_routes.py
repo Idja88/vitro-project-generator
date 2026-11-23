@@ -1,4 +1,5 @@
 """Tier 3: /get/* — read-only прокси к Vitro-CAD."""
+
 import pytest
 
 from vitro_generator import vitro_cad_api

@@ -1,13 +1,15 @@
 import os
+
 from flask import Flask, render_template
-from vitro_generator.config import configure_app
-from vitro_generator import callback
-from vitro_generator.legacy import set, get, export
-from vitro_generator.auth import require_token
-from werkzeug.middleware.proxy_fix import ProxyFix
-from vitro_generator.middleware import PrefixMiddleware
-from vitro_generator.logging_config import configure_logging
 from loguru import logger
+from werkzeug.middleware.proxy_fix import ProxyFix
+
+from vitro_generator import api, callback
+from vitro_generator.auth import require_token
+from vitro_generator.config import configure_app
+from vitro_generator.legacy import export, get, set
+from vitro_generator.logging_config import configure_logging
+from vitro_generator.middleware import PrefixMiddleware
 
 
 def create_app():
@@ -58,6 +60,7 @@ def create_app():
     app.register_blueprint(get.bp)
     app.register_blueprint(callback.bp)
     app.register_blueprint(export.bp)
+    app.register_blueprint(api.bp)
 
     if app.config.get("FLASK_CONFIG") != "prod" and app.config.get("VITRO_CAD_ADMIN_USERNAME"):
         logger.warning(
@@ -72,4 +75,3 @@ def create_app():
         return render_template("index.html", project_id=project_id)
 
     return app
-

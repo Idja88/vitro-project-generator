@@ -1,4 +1,5 @@
 """Tier 4: vitro_cad_api — HTTP-контракт с Vitro-CAD MP (мок на уровне requests через `responses`)."""
+
 import json
 
 import pytest
@@ -29,6 +30,7 @@ def body_text(request):
 
 # --- update_mp_list: multipart/form-data с частью itemListJson ---
 
+
 def test_update_mp_list_sends_multipart_item_list_json(ctx, rsps):
     rsps.add(responses.POST, f"{BASE}/api/item/update", json=[{"id": "N1"}])
     payload = [{"list_id": "L", "name": "АТХ", "sheet_set_number": 1}]
@@ -47,13 +49,13 @@ def test_update_mp_list_sends_multipart_item_list_json(ctx, rsps):
 
 
 def test_update_mp_list_returns_none_on_server_error(ctx, rsps):
-    rsps.add(responses.POST, f"{BASE}/api/item/update", status=500,
-             json={"message": "Multipart boundary not found."})
+    rsps.add(responses.POST, f"{BASE}/api/item/update", status=500, json={"message": "Multipart boundary not found."})
 
     assert vc.update_mp_list("TOK", [{"name": "x"}]) is None
 
 
 # --- get_mp_item ---
+
 
 def test_get_mp_item_without_query_has_no_body(ctx, rsps):
     rsps.add(responses.POST, f"{BASE}/api/item/get/ID-1", json={"id": "ID-1"})
@@ -79,6 +81,7 @@ def test_get_mp_item_empty_or_failed_returns_none(ctx, rsps, kwargs):
 
 # --- get_mp_children ---
 
+
 @pytest.mark.parametrize("recursive, endpoint", [(False, "getList"), (True, "getRecursive")])
 def test_get_mp_children_picks_endpoint(ctx, rsps, recursive, endpoint):
     rsps.add(responses.POST, f"{BASE}/api/item/{endpoint}/PARENT", json=[{"id": "c1"}])
@@ -100,7 +103,11 @@ def test_get_mp_children_returns_none_on_error(ctx, rsps):
 ACTIONS = [
     ("copy_mp_item", f"{BASE}/api/item/copy/TARGET", ("TOK", "TARGET", [{"id": "t"}])),
     ("restore_mp_item", f"{BASE}/api/item/restore/BIN-1", ("TOK", "BIN-1")),
-    ("set_mp_item_unique_permission", f"{BASE}/api/security/setItemUniquePermission", ("TOK", {"id": "F", "copy_permission": True})),
+    (
+        "set_mp_item_unique_permission",
+        f"{BASE}/api/security/setItemUniquePermission",
+        ("TOK", {"id": "F", "copy_permission": True}),
+    ),
 ]
 
 
@@ -130,6 +137,7 @@ def test_copy_mp_item_sends_template_list_as_json(ctx, rsps):
 
 # --- delete ---
 
+
 def test_delete_mp_item_passes_response_through(ctx, rsps):
     rsps.add(responses.POST, f"{BASE}/api/item/delete", json=[{"id": "F1"}])
 
@@ -139,6 +147,7 @@ def test_delete_mp_item_passes_response_through(ctx, rsps):
 
 # --- login ---
 
+
 def test_get_mp_token_posts_admin_credentials(ctx, rsps):
     rsps.add(responses.POST, f"{BASE}/api/security/login", json={"token": "ADMIN-TOKEN"})
 
@@ -147,13 +156,15 @@ def test_get_mp_token_posts_admin_credentials(ctx, rsps):
 
 
 def test_get_mp_token_returns_none_on_invalid_credentials(ctx, rsps):
-    rsps.add(responses.POST, f"{BASE}/api/security/login", status=500,
-             json={"message": "InvalidLoginPasswordException"})
+    rsps.add(
+        responses.POST, f"{BASE}/api/security/login", status=500, json={"message": "InvalidLoginPasswordException"}
+    )
 
     assert vc.get_mp_token() is None
 
 
 # --- сетевые сбои и таймаут ---
+
 
 def test_connection_error_returns_none(ctx, rsps, log_capture):
     rsps.add(responses.POST, f"{BASE}/api/item/update", body=requests.ConnectionError("boom"))

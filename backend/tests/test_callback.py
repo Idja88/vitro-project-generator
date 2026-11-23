@@ -1,4 +1,5 @@
 """Tier 3: POST /callback — точка входа из Vitro-CAD («Вызов внешнего сервиса»)."""
+
 import pytest
 
 

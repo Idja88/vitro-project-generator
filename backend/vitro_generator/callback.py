@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, current_app, request, url_for, make_response
+from flask import Blueprint, current_app, jsonify, make_response, request, url_for
 from loguru import logger
 
 from vitro_generator.auth import set_token_cookie
@@ -15,9 +15,7 @@ def vitro_cad_callback():
 
         if not auth_header:
             return (
-                jsonify(
-                    {"exception": {"message": "Отсутствует заголовок Authorization"}}
-                ),
+                jsonify({"exception": {"message": "Отсутствует заголовок Authorization"}}),
                 401,
             )
 
@@ -28,32 +26,20 @@ def vitro_cad_callback():
 
         if not data or "itemIdList" not in data or not data["itemIdList"]:
             return (
-                jsonify(
-                    {
-                        "exception": {
-                            "message": "Некорректный формат запроса. Ожидается itemIdList."
-                        }
-                    }
-                ),
+                jsonify({"exception": {"message": "Некорректный формат запроса. Ожидается itemIdList."}}),
                 400,
             )
 
         if len(data["itemIdList"]) != 1:
             return (
                 jsonify(
-                    {
-                        "exception": {
-                            "message": "Некорректный формат запроса. Ожидается один элемент в itemIdList."
-                        }
-                    }
+                    {"exception": {"message": "Некорректный формат запроса. Ожидается один элемент в itemIdList."}}
                 ),
                 400,
             )
 
         project_id = data["itemIdList"][0]
-        logger.info(
-            "Callback от Vitro-CAD: открытие генератора для проекта {}", project_id
-        )
+        logger.info("Callback от Vitro-CAD: открытие генератора для проекта {}", project_id)
 
         # Create response with redirect
         response = make_response()
@@ -61,12 +47,8 @@ def vitro_cad_callback():
 
         # Add Link-Open header for same-tab redirect
         response.headers["Link-Open-New-Tab"] = generator_url
-        response.headers["Access-Control-Allow-Origin"] = current_app.config.get(
-            "VITRO_CAD_API_BASE_URL", "*"
-        )
-        response.headers["Access-Control-Expose-Headers"] = (
-            "Link-Open, Link-Open-New-Tab"
-        )
+        response.headers["Access-Control-Allow-Origin"] = current_app.config.get("VITRO_CAD_API_BASE_URL", "*")
+        response.headers["Access-Control-Expose-Headers"] = "Link-Open, Link-Open-New-Tab"
 
         # Set secure cookie with token
         set_token_cookie(response, token)

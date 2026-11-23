@@ -1,4 +1,5 @@
 """Tier 1: POST /set/create/<project_id> — применение матрицы выбора к дереву папок."""
+
 import json
 
 import pytest
@@ -24,11 +25,14 @@ def call_index(fake, name, predicate=lambda call: True):
 
 # --- S1: новый проект целиком ---
 
+
 def test_s1_new_project_creates_full_structure(auth_client, vitro):
-    selection = matrix([
-        obj("O1", "Объект", [mark("M1", "АР")]),
-        obj(NULL_OBJECT_ID, "Общий объект", [mark("M1", "АР", number="2")]),
-    ])
+    selection = matrix(
+        [
+            obj("O1", "Объект", [mark("M1", "АР")]),
+            obj(NULL_OBJECT_ID, "Общий объект", [mark("M1", "АР", number="2")]),
+        ]
+    )
 
     response = post(auth_client, selection)
 
@@ -97,6 +101,7 @@ def test_s1_new_project_creates_full_structure(auth_client, vitro):
 
 # --- S2/S3: выбор родителя ---
 
+
 def test_s2_without_anchor_objects_go_to_project_folder(auth_client, vitro_factory):
     fake = vitro_factory(anchor=False)
     response = post(auth_client, matrix([obj("O1", "Объект", [])], folder="PF"))
@@ -115,6 +120,7 @@ def test_s3_pseudo_object_creates_no_object_folder(auth_client, vitro):
 
 # --- S4: идемпотентность без изменений ---
 
+
 def test_s4_unchanged_matrix_is_not_saved(auth_client, vitro):
     selection = matrix(
         [obj("O1", "Объект", [mark("M1", "АР", folder="MF1")], folder="OF")],
@@ -129,6 +135,7 @@ def test_s4_unchanged_matrix_is_not_saved(auth_client, vitro):
 
 
 # --- S5–S7: удаление и восстановление марок ---
+
 
 def test_s5_mark_to_remove_is_deleted(auth_client, vitro):
     selection = matrix(
@@ -145,7 +152,7 @@ def test_s5_mark_to_remove_is_deleted(auth_client, vitro):
 
 
 def test_s5b_failed_delete_keeps_flags(auth_client, vitro_factory, log_capture):
-    fake = vitro_factory(delete_ok=False)
+    vitro_factory(delete_ok=False)
     selection = matrix(
         [obj("O1", "Объект", [mark("M1", "АР", folder="MF1", to_remove=True)], folder="OF")],
         folder="PF",
@@ -192,7 +199,7 @@ def test_s7_mark_not_in_recycle_bin_keeps_flags(auth_client, vitro_factory):
 
 
 def test_s7b_failed_restore_keeps_flags(auth_client, vitro_factory):
-    fake = vitro_factory(restore_ok=False)
+    vitro_factory(restore_ok=False)
     selection = matrix(
         [obj("O1", "Объект", [mark("M2", "КЖ", folder="MF2", to_restore=True, deleted=True)], folder="OF")],
         folder="PF",
@@ -205,6 +212,7 @@ def test_s7b_failed_restore_keeps_flags(auth_client, vitro_factory):
 
 
 # --- S8/S9: объекты ---
+
 
 def test_s8_object_to_remove_deletes_marks_first(auth_client, vitro):
     selection = matrix(
@@ -228,9 +236,7 @@ def test_s9_object_to_restore_runs_before_its_marks(auth_client, vitro):
     response = post(auth_client, selection)
 
     restore_at = call_index(vitro, "restore_mp_item")
-    mark_created_at = call_index(
-        vitro, "update_mp_list", lambda c: c[1][0].get("content_type_id") == "CT-MF"
-    )
+    mark_created_at = call_index(vitro, "update_mp_list", lambda c: c[1][0].get("content_type_id") == "CT-MF")
     assert restore_at < mark_created_at
     result_obj = response.get_json()["matrix"]["objects"][0]
     assert result_obj["deleted"] is False and result_obj["to_restore"] is False
@@ -238,6 +244,7 @@ def test_s9_object_to_restore_runs_before_its_marks(auth_client, vitro):
 
 
 # --- S10: номер марки ---
+
 
 @pytest.mark.parametrize("number, expected", [("", None), ("3", "3"), (1, 1)])
 def test_s10_mark_number_is_passed_as_sheet_set_number(auth_client, vitro, number, expected):
@@ -247,6 +254,7 @@ def test_s10_mark_number_is_passed_as_sheet_set_number(auth_client, vitro, numbe
 
 
 # --- S11–S13: права ---
+
 
 def test_s11_mark_without_departments_skips_permissions(auth_client, vitro_factory, log_capture):
     fake = vitro_factory(departments=None)
@@ -284,6 +292,7 @@ def test_s13b_failed_scope_item_is_an_error(auth_client, vitro_factory):
 
 # --- S14/S15: сбои Vitro-CAD ---
 
+
 def test_s14_api_failure_returns_500_with_message_and_logs(auth_client, vitro_factory, log_capture):
     vitro_factory(fail_on={"CT-OF"})
     response = post(auth_client, matrix([obj("O1", "Объект", [])], folder="PF"))
@@ -291,8 +300,7 @@ def test_s14_api_failure_returns_500_with_message_and_logs(auth_client, vitro_fa
     assert response.status_code == 500
     assert response.get_json() == {"error": "Не удалось создать папку объекта «Объект»"}
     assert any(
-        r["level"].name == "ERROR" and "Не удалось создать папку объекта «Объект»" in r["message"]
-        for r in log_capture
+        r["level"].name == "ERROR" and "Не удалось создать папку объекта «Объект»" in r["message"] for r in log_capture
     )
 
 
@@ -308,7 +316,7 @@ def test_s15_template_copy_failure_is_logged_but_not_fatal(auth_client, vitro_fa
 
 def test_s15b_unexpected_exception_is_logged_with_traceback(auth_client, vitro_factory, log_capture, monkeypatch):
     vitro_factory()
-    from vitro_generator.legacy import set as set_module
+    from vitro_generator.services import structure as set_module
 
     def boom(*args, **kwargs):
         raise RuntimeError("boom")
@@ -322,6 +330,7 @@ def test_s15b_unexpected_exception_is_logged_with_traceback(auth_client, vitro_f
 
 
 # --- S16–S19: контракт маршрута ---
+
 
 @pytest.mark.parametrize("raw_body", ["null", '{"id": "P1"}', "not json at all", "[]"])
 def test_s16_invalid_body_returns_400(auth_client, vitro, raw_body):
@@ -355,9 +364,9 @@ def test_s19_update_endpoint_echoes_body(auth_client):
     assert response.get_json() == payload
 
 
-# --- S20: известная уязвимость (слабое место №7) ---
+# --- S20: идентификаторы с символами запроса отклоняются (бывшее слабое место №7) ---
 
-@pytest.mark.xfail(strict=True, reason="слабое место №7: folder_structure_id подставляется в запрос Vitro-CAD без валидации GUID")
+
 def test_s20_non_guid_folder_id_is_rejected(auth_client, vitro):
     hostile_id = 'abc" || item.Id != Guid("'
     selection = matrix(

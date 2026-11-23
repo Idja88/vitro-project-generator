@@ -1,4 +1,5 @@
 """Tier 2: GET /export/excel/<project_id> — экспорт Формы 10."""
+
 import json
 from datetime import datetime
 from io import BytesIO
@@ -20,7 +21,7 @@ class FrozenDatetime(datetime):
 
 @pytest.fixture
 def frozen_date(monkeypatch):
-    monkeypatch.setattr("vitro_generator.legacy.export.datetime", FrozenDatetime)
+    monkeypatch.setattr("vitro_generator.services.export_f10.datetime", FrozenDatetime)
 
 
 def project_item(selection_matrix, name="Проект", code="PRJ", chief="Иванов И.И."):
@@ -43,17 +44,24 @@ def mark_item(full_name, package=None):
 
 
 # Корпус: АР, КЖ, КЖ2, ГП (+ удалённая ОВ); Склад без номера: АР; удалённый объект
-SAMPLE_MATRIX = matrix([
-    obj("O1", "Корпус", [
-        mark("M1", "АР"),
-        mark("M2", "КЖ"),
-        mark("M2", "КЖ", number="2"),
-        mark("M4", "ГП"),
-        mark("M5", "ОВ", deleted=True),
-    ], number="1"),
-    obj("O2", "Склад", [mark("M1", "АР")], number=""),
-    obj("O3", "Удалённый", [mark("M1", "АР")], number="3", deleted=True),
-])
+SAMPLE_MATRIX = matrix(
+    [
+        obj(
+            "O1",
+            "Корпус",
+            [
+                mark("M1", "АР"),
+                mark("M2", "КЖ"),
+                mark("M2", "КЖ", number="2"),
+                mark("M4", "ГП"),
+                mark("M5", "ОВ", deleted=True),
+            ],
+            number="1",
+        ),
+        obj("O2", "Склад", [mark("M1", "АР")], number=""),
+        obj("O3", "Удалённый", [mark("M1", "АР")], number="3", deleted=True),
+    ]
+)
 
 MARK_ITEMS = {
     "M1": mark_item("Архитектурные решения", "Архитектура"),
@@ -78,6 +86,7 @@ def row_values(ws, row, first_col, last_col):
 
 # --- E1: ошибки ---
 
+
 def test_e1_project_not_found(auth_client, vitro_factory):
     vitro_factory(items={})
     response = auth_client.get("/export/excel/P1")
@@ -99,6 +108,7 @@ def test_export_requires_token(client, vitro, prod_env):
 
 # --- E2: метаданные ---
 
+
 def test_e2_metadata_cells(auth_client, vitro_factory, frozen_date):
     response, _ = export(auth_client, vitro_factory)
     ws = sheet(response)
@@ -111,6 +121,7 @@ def test_e2_metadata_cells(auth_client, vitro_factory, frozen_date):
 
 
 # --- E3/E4/E7: колонки марок ---
+
 
 def test_e3_packages_sorted_merged_and_unpackaged_last(auth_client, vitro_factory, frozen_date):
     response, _ = export(auth_client, vitro_factory)
@@ -147,6 +158,7 @@ def test_e7_same_mark_with_different_numbers_gets_separate_columns(auth_client, 
 
 # --- E5/E6: строки объектов ---
 
+
 def test_e5_object_rows_codes_and_intersections(auth_client, vitro_factory, frozen_date):
     response, _ = export(auth_client, vitro_factory)
     ws = sheet(response)
@@ -173,6 +185,7 @@ def test_e6_deleted_objects_and_marks_are_excluded(auth_client, vitro_factory, f
 
 # --- E8/E9: устойчивость к данным ---
 
+
 def test_e8_mark_lookup_failure_falls_back_to_display_name(auth_client, vitro_factory, frozen_date):
     response, _ = export(auth_client, vitro_factory, mark_items={})
     ws = sheet(response)
@@ -194,6 +207,7 @@ def test_e9_matrix_as_json_string_gives_same_result(auth_client, vitro_factory, 
 
 # --- E10: HTTP-ответ ---
 
+
 def test_e10_download_headers(auth_client, vitro_factory, frozen_date):
     response, _ = export(auth_client, vitro_factory)
 
@@ -205,8 +219,9 @@ def test_e10_download_headers(auth_client, vitro_factory, frozen_date):
 
 # --- E11: шаблона нет ---
 
+
 def test_e11_without_template_builds_simple_sheet(auth_client, vitro_factory, monkeypatch):
-    monkeypatch.setattr("vitro_generator.legacy.export.os.path.exists", lambda path: False)
+    monkeypatch.setattr("vitro_generator.services.export_f10.os.path.exists", lambda path: False)
     response, _ = export(auth_client, vitro_factory)
     ws = sheet(response)
 

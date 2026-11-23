@@ -4,6 +4,7 @@
 через os.getenv, а load_dotenv() не перетирает уже заданные переменные, поэтому реальный .env
 разработчика сюда не просачивается.
 """
+
 import os
 
 from tests.fakes import IDS, FakeVitro
@@ -25,11 +26,13 @@ TEST_ENV = {
 for _key, _value in TEST_ENV.items():
     os.environ[_key] = _value
 
-import pytest  # noqa: E402
-from loguru import logger  # noqa: E402
+import pytest
+from loguru import logger
 
-from vitro_generator import vitro_cad_api  # noqa: E402
-from vitro_generator import create_app  # noqa: E402
+from vitro_generator import (
+    create_app,
+    vitro_cad_api,
+)
 
 
 @pytest.fixture(scope="session")

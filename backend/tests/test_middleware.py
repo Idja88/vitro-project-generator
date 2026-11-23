@@ -1,4 +1,5 @@
 """Tier 3: PrefixMiddleware — чистый WSGI, без Flask."""
+
 from vitro_generator.middleware import PrefixMiddleware
 
 

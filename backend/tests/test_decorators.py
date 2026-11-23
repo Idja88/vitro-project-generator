@@ -1,4 +1,5 @@
 """Tier 3: @require_token — источники токена и dev-автологин."""
+
 import pytest
 
 from vitro_generator import vitro_cad_api
@@ -38,6 +39,7 @@ def test_vitro_authorization_cookie_is_ignored(client, seen_token, vitro, prod_e
 
 # --- production-поведение: FLASK_CONFIG=prod ---
 
+
 def test_no_token_returns_401_in_production(client, seen_token, vitro, prod_env, log_capture):
     response = client.get("/get/marks")
 
@@ -58,6 +60,7 @@ def test_no_config_token_fallback(client, app, seen_token, prod_env, monkeypatch
 
 
 # --- dev-автологин: среда не production, учётные данные в конфиге ---
+
 
 def test_dev_autologin_logs_in_and_sets_cookie(client, vitro, seen_token, log_capture):
     # порядок фикстур важен: seen_token должен подменить get_mp_children после установки vitro
