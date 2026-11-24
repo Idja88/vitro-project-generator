@@ -15,7 +15,7 @@ def dist(tmp_path):
     (tmp_path / "assets").mkdir()
     (tmp_path / "index.html").write_text(INDEX, encoding="utf-8")
     (tmp_path / "assets" / "index-abc.js").write_text("console.log('app')", encoding="utf-8")
-    (tmp_path / "favicon.svg").write_text("<svg/>", encoding="utf-8")
+    (tmp_path / "favicon.ico").write_bytes(bytes([0, 0, 1, 0]))  # заголовок ICO
     return tmp_path
 
 
@@ -42,7 +42,7 @@ def test_assets_and_favicon_are_served(react_client):
     assert asset.status_code == 200
     assert b"console.log" in asset.data
     assert "max-age=31536000" in asset.headers["Cache-Control"]
-    assert react_client.get("/favicon.svg").status_code == 200
+    assert react_client.get("/favicon.ico").status_code == 200
     assert react_client.get("/assets/missing.js").status_code == 404
 
 

@@ -54,8 +54,8 @@ def assets(filename):
     return send_from_directory(os.path.join(dist_dir(), "assets"), filename, max_age=365 * 24 * 3600)
 
 
-@bp.route("/favicon.svg")
+@bp.route("/favicon.ico")
 def favicon():
-    if not os.path.isfile(os.path.join(dist_dir(), "favicon.svg")):
+    if not os.path.isfile(os.path.join(dist_dir(), "favicon.ico")):
         abort(404)
-    return send_from_directory(dist_dir(), "favicon.svg")
+    return send_from_directory(dist_dir(), "favicon.ico")

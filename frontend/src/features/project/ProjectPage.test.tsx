@@ -57,7 +57,7 @@ describe('ProjectPage', () => {
     renderWithProviders(<ProjectPage projectId="P1" />)
 
     expect(await screen.findByText('Матрица пуста')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Форма 10/ })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Выгрузить Форму 10 в Excel' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Создать структуру' })).toBeInTheDocument()
   })
 
@@ -83,6 +83,7 @@ describe('ProjectPage', () => {
 
     await user.click(within(dialog).getByRole('button', { name: 'Обновить структуру' }))
     expect(await screen.findByRole('link', { name: 'Открыть в Vitro-CAD' })).toHaveAttribute('href', 'http://vitro/item/PF')
+    expect(screen.queryByText('http://vitro/item/PF')).not.toBeInTheDocument()
 
     const sent = calls.find((c) => c.method === 'POST' && c.path === 'projects/P1/structure')?.body as SelectionMatrix
     const kzh = sent.objects[0].marks.find((m) => m.id === 'M2')

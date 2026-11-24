@@ -1,4 +1,18 @@
-import { Alert, Anchor, Badge, Button, Center, Group, Loader, Modal, Paper, Stack, Text, Title } from '@mantine/core'
+import {
+  ActionIcon,
+  Alert,
+  Badge,
+  Button,
+  Center,
+  Group,
+  Loader,
+  Modal,
+  Paper,
+  Stack,
+  Text,
+  Title,
+  Tooltip,
+} from '@mantine/core'
 import { modals } from '@mantine/modals'
 import { notifications } from '@mantine/notifications'
 import { IconCheck, IconFileSpreadsheet, IconPlus, IconTrash } from '@tabler/icons-react'
@@ -116,9 +130,9 @@ export function ProjectPage({ projectId }: { projectId: string }) {
   return (
     <Stack gap="md">
       <Paper withBorder radius="md" p="md">
-        <Group justify="space-between" align="flex-start" wrap="wrap">
-          <Stack gap={6}>
-            <Title order={3}>{data.name}</Title>
+        <Stack gap="md">
+          <Title order={3}>{data.name}</Title>
+          <Group justify="space-between" align="flex-end" wrap="wrap">
             <Group gap="xs">
               {data.code && <Badge variant="light">Шифр {data.code}</Badge>}
               {data.chief && (
@@ -130,23 +144,25 @@ export function ProjectPage({ projectId }: { projectId: string }) {
                 {data.isGenerated ? 'Структура создана' : 'Структура ещё не создана'}
               </Badge>
             </Group>
-          </Stack>
-          <Group gap="xs">
-            <Button
-              variant="default"
-              leftSection={<IconFileSpreadsheet size={16} />}
-              onClick={exportF10}
-              loading={exporting}
-              disabled={!data.matrix}
-              title={data.matrix ? undefined : 'Сначала создайте структуру'}
-            >
-              Форма 10
-            </Button>
-            <Button color="teal" leftSection={<IconCheck size={16} />} onClick={startApply} loading={preview.isPending}>
-              {data.isGenerated ? 'Обновить структуру' : 'Создать структуру'}
-            </Button>
+            <Group gap="xs">
+              <Button color="teal" leftSection={<IconCheck size={16} />} onClick={startApply} loading={preview.isPending}>
+                {data.isGenerated ? 'Обновить структуру' : 'Создать структуру'}
+              </Button>
+              <Tooltip label={data.matrix ? 'Выгрузить Форму 10 в Excel' : 'Сначала создайте структуру'} withArrow>
+                <ActionIcon
+                  variant="default"
+                  size="input-sm"
+                  onClick={exportF10}
+                  loading={exporting}
+                  disabled={!data.matrix}
+                  aria-label="Выгрузить Форму 10 в Excel"
+                >
+                  <IconFileSpreadsheet size={18} />
+                </ActionIcon>
+              </Tooltip>
+            </Group>
           </Group>
-        </Group>
+        </Stack>
       </Paper>
 
       <Group justify="space-between">
@@ -224,11 +240,6 @@ export function ProjectPage({ projectId }: { projectId: string }) {
               </Button>
             )}
           </Group>
-          {result?.project_link && (
-            <Anchor href={result.project_link} target="_blank" size="xs" c="dimmed">
-              {result.project_link}
-            </Anchor>
-          )}
         </Stack>
       </Modal>
     </Stack>

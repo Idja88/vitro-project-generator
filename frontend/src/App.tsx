@@ -1,4 +1,4 @@
-import { Alert, AppShell, Group, Text, Title } from '@mantine/core'
+import { Alert, AppShell, Group, Title } from '@mantine/core'
 
 import { projectIdFromLocation } from './api/client'
 import { ProjectPage } from './features/project/ProjectPage'
@@ -9,11 +9,8 @@ export default function App() {
   return (
     <AppShell header={{ height: 52 }} padding="md">
       <AppShell.Header px="md">
-        <Group h="100%" justify="space-between">
-          <Title order={4}>Генератор проектов</Title>
-          <Text size="sm" c="dimmed">
-            Vitro-CAD MP
-          </Text>
+        <Group h="100%">
+          <Title order={4}>Vitro Project Generator</Title>
         </Group>
       </AppShell.Header>
       <AppShell.Main>
