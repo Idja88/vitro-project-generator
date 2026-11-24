@@ -133,7 +133,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
         <Stack gap="md">
           <Group justify="space-between" align="flex-start" wrap="wrap">
             <Title order={3}>{data.name}</Title>
-            <Badge variant="dot" color={data.isGenerated ? 'teal' : 'gray'}>
+            <Badge variant="dot" size="sm" color={data.isGenerated ? 'teal' : 'gray'}>
               {data.isGenerated ? 'Структура создана' : 'Структура ещё не создана'}
             </Badge>
           </Group>
