@@ -79,7 +79,7 @@ describe('ProjectPage', () => {
 
     const dialog = await screen.findByRole('dialog', { name: 'Проверьте изменения' })
     expect(within(dialog).getByText('Будет удалено в корзину')).toBeInTheDocument()
-    expect(within(dialog).getByText('Марка КЖ2 — Корпус')).toBeInTheDocument()
+    expect(within(dialog).getByText('Раздел КЖ2 — Корпус')).toBeInTheDocument()
 
     await user.click(within(dialog).getByRole('button', { name: 'Обновить структуру' }))
     expect(await screen.findByRole('link', { name: 'Открыть в Vitro-CAD' })).toHaveAttribute('href', 'http://vitro/item/PF')

@@ -76,7 +76,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
       notifications.show({
         color: 'yellow',
         title: 'Нечего сохранять',
-        message: 'Отметьте хотя бы одну марку у объекта.',
+        message: 'Отметьте хотя бы один раздел у объекта.',
       })
       return
     }
@@ -170,10 +170,10 @@ export function ProjectPage({ projectId }: { projectId: string }) {
       <Group justify="space-between">
         <Group gap="xs">
           <Button variant="light" leftSection={<IconPlus size={16} />} onClick={() => setModal('objects')}>
-            Объекты
+            Объект
           </Button>
           <Button variant="light" leftSection={<IconPlus size={16} />} onClick={() => setModal('mark')}>
-            Марка
+            Раздел
           </Button>
           <Button
             variant="light"
@@ -191,7 +191,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
           )}
         </Group>
         <Text size="sm" c="dimmed">
-          Объектов: {state.rows.length} · Марок: {state.columns.length}
+          Объектов: {state.rows.length} · Разделов: {state.columns.length}
         </Text>
       </Group>
 

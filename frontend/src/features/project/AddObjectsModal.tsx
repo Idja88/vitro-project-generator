@@ -76,7 +76,7 @@ export function AddObjectsModal({ opened, onClose, parentId, listUrl, state, onA
         <Group justify="space-between">
           {listUrl ? (
             <Anchor href={listUrl} target="_blank" size="sm">
-              Открыть реестр объектов
+              Перейти к списку
             </Anchor>
           ) : (
             <span />

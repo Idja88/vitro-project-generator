@@ -10,7 +10,7 @@ const GROUPS: { type: ActionType; title: string; color: string; icon: ReactNode 
   { type: 'remove', title: 'Будет удалено в корзину', color: 'red', icon: <IconTrash size={14} /> },
 ]
 
-const KIND: Record<PreviewAction['kind'], string> = { project: 'Папка проекта', object: 'Объект', mark: 'Марка' }
+const KIND: Record<PreviewAction['kind'], string> = { project: 'Папка проекта', object: 'Объект', mark: 'Раздел' }
 
 function describe(action: PreviewAction): string {
   if (action.kind === 'mark') return `${KIND.mark} ${action.name}${action.object ? ` — ${action.object}` : ' — в папке проекта'}`
@@ -71,7 +71,7 @@ export function PreviewModal({ opened, preview, submitting, isUpdate, onClose, o
           )}
           {preview.summary.remove > 0 && (
             <Alert color="red" variant="light">
-              Удалённые папки попадут в корзину Vitro-CAD; их можно вернуть, снова отметив марку или объект.
+              Удалённые папки попадут в корзину Vitro-CAD; их можно вернуть, снова отметив раздел или объект.
             </Alert>
           )}
           <Group justify="flex-end">

@@ -44,16 +44,16 @@ export function AddMarkModal({ opened, onClose, listUrl, state, onAdd }: Props) 
   }
 
   return (
-    <Modal opened={opened} onClose={close} title="Добавить марку комплекта">
+    <Modal opened={opened} onClose={close} title="Добавить раздел">
       <Stack>
         {marks.isError && (
-          <Alert color="red" title="Не удалось загрузить марки">
+          <Alert color="red" title="Не удалось загрузить разделы">
             {marks.error.message}
           </Alert>
         )}
         <Select
-          label="Марка"
-          placeholder={marks.isLoading ? 'Загрузка…' : 'Выберите марку'}
+          label="Раздел"
+          placeholder={marks.isLoading ? 'Загрузка…' : 'Выберите раздел'}
           data={data}
           value={markId}
           onChange={setMarkId}
@@ -76,12 +76,12 @@ export function AddMarkModal({ opened, onClose, listUrl, state, onAdd }: Props) 
           error={numberError}
         />
         {duplicate && column && (
-          <Alert color="yellow">Марка «{columnLabel(column)}» уже есть в таблице.</Alert>
+          <Alert color="yellow">Раздел «{columnLabel(column)}» уже есть в таблице.</Alert>
         )}
         <Group justify="space-between">
           {listUrl ? (
             <Anchor href={listUrl} target="_blank" size="sm">
-              Открыть реестр марок
+              Перейти к списку
             </Anchor>
           ) : (
             <span />

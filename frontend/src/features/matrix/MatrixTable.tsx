@@ -81,7 +81,7 @@ function ColumnHeader({
           type="button"
           ref={setActivatorNodeRef}
           className={classes.handle}
-          aria-label={`Переместить марку ${columnLabel(column)}`}
+          aria-label={`Переместить раздел ${columnLabel(column)}`}
           {...attributes}
           {...listeners}
         >
@@ -195,7 +195,7 @@ export function MatrixTable({ state, dispatch }: { state: MatrixState; dispatch:
       <div className={classes.empty}>
         <Text fw={500}>Матрица пуста</Text>
         <Text c="dimmed" size="sm">
-          Добавьте объекты проектирования и марки комплектов, затем отметьте пересечения.
+          Добавьте объекты проектирования и разделы, затем отметьте пересечения.
         </Text>
       </div>
     )
