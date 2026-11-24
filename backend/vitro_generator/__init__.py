@@ -1,13 +1,17 @@
 import os
 
-from flask import Flask
+from flask import Flask, jsonify, request
 from loguru import logger
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from vitro_generator import api, callback, frontend
+from vitro_generator.auth import TOKEN_COOKIE
 from vitro_generator.config import configure_app
 from vitro_generator.logging_config import configure_logging
 from vitro_generator.middleware import PrefixMiddleware
+from vitro_generator.vitro_cad_api import VitroAuthError
+
+SESSION_EXPIRED_MESSAGE = "Сессия Vitro-CAD истекла. Откройте генератор заново из карточки проекта в Vitro-CAD."
 
 
 def create_app():
@@ -44,6 +48,15 @@ def create_app():
     app.register_blueprint(callback.bp)
     app.register_blueprint(api.bp)
     app.register_blueprint(frontend.bp)
+
+    @app.errorhandler(VitroAuthError)
+    def vitro_unauthorized(error):
+        """Токен истёк в Vitro-CAD: 401 с понятным текстом и сброс cookie, чтобы следующий вход начался заново."""
+        logger.warning("Vitro-CAD отклонил токен пользователя: {} {}", request.method, request.path)
+        response = jsonify({"error": SESSION_EXPIRED_MESSAGE})
+        response.status_code = 401
+        response.delete_cookie(TOKEN_COOKIE)
+        return response
 
     @app.get("/healthz")
     def healthz():

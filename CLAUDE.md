@@ -49,7 +49,7 @@ frontend/src/
 ### Request flow and auth
 
 1. Vitro-CAD's action POSTs `{"itemIdList": [projectId]}` with an `Authorization` header to `/callback`; the token goes into cookie `mp_token` (one day) and the response's `Link-Open-New-Tab` points to `/project/<id>`.
-2. `require_token` reads only `mp_token`. If absent **and** `FLASK_CONFIG != "prod"` **and** `VITRO_CAD_ADMIN_USERNAME/PASSWORD` are set, it logs in via `get_mp_token()` and sets the cookie (dev auto-login). Otherwise 401. Environment checks key off `app.config["FLASK_CONFIG"]`, never `app.debug`.
+2. `require_token` reads only `mp_token`. If absent **and** `FLASK_CONFIG != "prod"` **and** `VITRO_CAD_ADMIN_USERNAME/PASSWORD` are set, it logs in via `get_mp_token()` and sets the cookie (dev auto-login). Otherwise 401. When Vitro-CAD itself answers 401 (token expired), `vitro_cad_api` raises `VitroAuthError` instead of returning `None`; the app-level error handler turns it into 401 "сессия истекла" and clears `mp_token`. Broad `except Exception` blocks must re-raise `VitroAuthError`. Environment checks key off `app.config["FLASK_CONFIG"]`, never `app.debug`.
 3. Production runs behind nginx at `PREFIX=/generator`; `PrefixMiddleware` 404s anything outside the prefix. The React build uses relative paths and `frontend.py` rewrites `<base href="/" />` to the prefix, so the same build works at `/` and `/generator/`; `apiUrl()` resolves against `document.baseURI`.
 
 ### The selection matrix

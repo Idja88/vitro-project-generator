@@ -17,6 +17,17 @@ def _headers(mp_token):
     return {"Authorization": mp_token}
 
 
+class VitroAuthError(Exception):
+    """Vitro-CAD ответил 401: токен пользователя истёк, отозван или не передан."""
+
+
+def _raise_if_unauthorized(error):
+    """401 нельзя прятать за None, как прочие ошибки: пользователю нужно войти заново, а не «Проект не найден»."""
+    response = getattr(error, "response", None)
+    if response is not None and response.status_code == 401:
+        raise VitroAuthError("Vitro-CAD отклонил токен (401)") from error
+
+
 # Получаем токен для доступа к Vitro-CAD MP
 def get_mp_token():
     mp_login = {
@@ -50,6 +61,7 @@ def update_mp_list(mp_token, data):
             logger.debug("update_mp_list: {} элемент(ов) → {}", len(data), result)
             return result
     except requests.exceptions.RequestException as e:
+        _raise_if_unauthorized(e)
         logger.error("Ошибка update_mp_list (data={}): {}", data, e)
         return None
 
@@ -67,6 +79,7 @@ def get_mp_item(mp_token, item_id, query=None):
             logger.warning("get_mp_item: пустой ответ для элемента {}", item_id)
             return None
     except requests.exceptions.RequestException as e:
+        _raise_if_unauthorized(e)
         logger.error("Ошибка get_mp_item (item_id={}): {}", item_id, e)
         return None
 
@@ -89,6 +102,7 @@ def get_mp_children(mp_token, parent_id, recursive=False, query=None):
             )
             return result
     except requests.exceptions.RequestException as e:
+        _raise_if_unauthorized(e)
         logger.error(
             "Ошибка get_mp_children (parent_id={}, recursive={}, query={!r}): {}",
             parent_id,
@@ -108,6 +122,7 @@ def copy_mp_item(mp_token, to_item_id, data):
             logger.debug("copy_mp_item: {} элемент(ов) скопировано в {}", len(data), to_item_id)
             return True
     except requests.exceptions.RequestException as e:
+        _raise_if_unauthorized(e)
         logger.error("Ошибка copy_mp_item (to_item_id={}): {}", to_item_id, e)
         return None
 
@@ -122,6 +137,7 @@ def delete_mp_item(mp_token, data):
             logger.debug("delete_mp_item: {} → {}", data, result)
             return result
     except requests.exceptions.RequestException as e:
+        _raise_if_unauthorized(e)
         logger.error("Ошибка delete_mp_item (data={}): {}", data, e)
         return None
 
@@ -135,6 +151,7 @@ def restore_mp_item(mp_token, item_id):
             logger.debug("restore_mp_item: элемент {} восстановлен", item_id)
             return True
     except requests.exceptions.RequestException as e:
+        _raise_if_unauthorized(e)
         logger.error("Ошибка restore_mp_item (item_id={}): {}", item_id, e)
         return None
 
@@ -148,5 +165,6 @@ def set_mp_item_unique_permission(mp_token, data):
             logger.debug("set_mp_item_unique_permission: {}", data)
             return True
     except requests.exceptions.RequestException as e:
+        _raise_if_unauthorized(e)
         logger.error("Ошибка set_mp_item_unique_permission (data={}): {}", data, e)
         return None

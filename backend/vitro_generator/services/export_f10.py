@@ -23,6 +23,7 @@ from vitro_generator.services.matrix import (
     parse_matrix,
     project_code,
 )
+from vitro_generator.vitro_cad_api import VitroAuthError
 
 FIRST_MARK_COL = 6  # F
 FIRST_OBJECT_ROW = 11
@@ -75,6 +76,8 @@ def _mark_details(token, mark):
     fallback = display_name(mark)
     try:
         data = vc.get_mp_item(token, mark["id"]) if token else None
+    except VitroAuthError:
+        raise
     except Exception:
         data = None
     if not data or "fieldValueMap" not in data:
