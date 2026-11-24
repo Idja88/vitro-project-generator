@@ -131,12 +131,12 @@ def test_create_structure(auth_client, vitro):
 
 def test_create_structure_preserves_mark_order(auth_client, vitro):
     selection = matrix([obj("O1", "Объект", [mark("M1", "АР")])])
-    selection["mark_order"] = ["M1|"]
+    selection["mark_order"] = [{"id": "M1", "number": ""}]
 
     response = auth_client.post(f"{API}/projects/P1/structure", json=selection)
 
-    assert response.get_json()["matrix"]["mark_order"] == ["M1|"]
-    assert vitro.updates("CT-PROJ")[0]["selection_matrix"]["mark_order"] == ["M1|"]
+    assert response.get_json()["matrix"]["mark_order"] == [{"id": "M1", "number": ""}]
+    assert vitro.updates("CT-PROJ")[0]["selection_matrix"]["mark_order"] == [{"id": "M1", "number": ""}]
 
 
 def test_create_structure_rejects_unsafe_ids(auth_client, vitro):
@@ -150,7 +150,8 @@ def test_create_structure_rejects_unsafe_ids(auth_client, vitro):
 
 def test_f10_respects_mark_order(auth_client, vitro_factory):
     selection = matrix([obj("O1", "Корпус", [mark("M1", "АР"), mark("M2", "КЖ"), mark("M3", "ГП")])])
-    selection["mark_order"] = ["M3|", "M1|"]  # M2 не указан — идёт после перечисленных
+    # M2 не указан — идёт после перечисленных
+    selection["mark_order"] = [{"id": "M3", "number": ""}, {"id": "M1", "number": ""}]
     project = {
         "id": "P1",
         "fieldValueMap": {
@@ -258,9 +259,23 @@ def test_ordered_marks_follow_mark_order_then_appearance():
             obj("O3", "C", [mark("M5", "ВК")], deleted=True),
         ]
     )
-    selection["mark_order"] = ["M3|", "UNKNOWN|", "M1|"]
+    selection["mark_order"] = [{"id": "M3", "number": ""}, {"id": "UNKNOWN", "number": ""}, {"id": "M1", "number": ""}]
 
     assert list(ordered_active_marks(selection)) == ["M3|", "M1|", "M2|"]
+
+
+def test_ordered_marks_distinguish_numbers():
+    selection = matrix([obj("O1", "A", [mark("M1", "АР"), mark("M1", "АР", number="1"), mark("M1", "АР", number="2")])])
+    selection["mark_order"] = [{"id": "M1", "number": "2"}, {"id": "M1", "number": ""}, {"id": "M1", "number": "1"}]
+
+    assert list(ordered_active_marks(selection)) == ["M1|2", "M1|", "M1|1"]
+
+
+def test_ordered_marks_ignore_entries_that_are_not_columns():
+    selection = matrix([obj("O1", "A", [mark("M1", "АР"), mark("M2", "КЖ")])])
+    selection["mark_order"] = ["M2|", {"number": "1"}, {"id": "M2", "number": ""}]
+
+    assert list(ordered_active_marks(selection)) == ["M2|", "M1|"]
 
 
 @pytest.mark.parametrize(
@@ -272,6 +287,10 @@ def test_ordered_marks_follow_mark_order_then_appearance():
         (matrix([obj("O1", "X", [mark("M1", "АР", number="100")])]), "номер раздела"),
         (matrix([obj("O1", "X", [mark("M1", "АР", number="01")])]), "номер раздела"),
         ({**matrix([]), "mark_order": "M1|"}, "mark_order"),
+        ({**matrix([]), "mark_order": [42]}, "mark_order"),
+        ({**matrix([]), "mark_order": ["M1|"]}, "mark_order"),
+        ({**matrix([]), "mark_order": [{"id": 'M1"', "number": ""}]}, "марки в mark_order"),
+        ({**matrix([]), "mark_order": [{"id": "M1", "number": "100"}]}, "номер раздела в mark_order"),
     ],
 )
 def test_validate_matrix_errors(selection, error):

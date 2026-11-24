@@ -87,7 +87,10 @@ describe('ProjectPage', () => {
     const sent = calls.find((c) => c.method === 'POST' && c.path === 'projects/P1/structure')?.body as SelectionMatrix
     const kzh = sent.objects[0].marks.find((m) => m.id === 'M2')
     expect(kzh).toMatchObject({ to_remove: true, folder_structure_id: 'MF2' })
-    expect(sent.mark_order).toEqual(['M1|', 'M2|2'])
+    expect(sent.mark_order).toEqual([
+      { id: 'M1', number: '' },
+      { id: 'M2', number: '2' },
+    ])
   })
 
   it('выделение строки и удаление через подтверждение', async () => {

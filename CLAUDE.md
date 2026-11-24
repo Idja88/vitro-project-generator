@@ -57,15 +57,15 @@ frontend/src/
 Stored as JSON in the project's `selection_matrix` field and round-tripped:
 
 ```
-{ id, name, folder_structure_id, mark_order?: ["<mark_id>|<number>", ...],
+{ id, name, folder_structure_id, mark_order?: [ { id, number }, ... ],
   objects: [ { id, name, number, folder_structure_id, deleted, to_remove, to_restore,
                marks: [ { id, name, number, folder_structure_id, deleted, to_remove, to_restore } ] } ] }
 ```
 
 - `folder_structure_id == ""` → create the folder. `to_remove` / `to_restore` are one-shot intents; the backend performs them and flips them back, updating `deleted`.
-- A mark is identified by `id` **plus** `number` (АР1 ≠ АР2); key format `id|number` is shared by backend (`services/matrix.mark_key`) and frontend (`columnKey`).
+- A mark is identified by `id` **plus** `number` (АР1 ≠ АР2). In code the column key is the string `id|number` (`services/matrix.mark_key`, frontend `columnKey`), but it is never stored.
 - Object id `00000000-0000-0000-0000-000000000000` is the pseudo-object «Общий объект»: marks go straight under the project folder.
-- `mark_order` is optional column order; old matrices without it still load.
+- `mark_order` is the optional left-to-right column order as `{id, number}` objects. Readers ignore entries that are not such objects (columns then fall back to first-appearance order); the next save writes the current order. Row order is simply the order of `objects`.
 - `buildSelectionMatrix` (frontend) and `services/preview.plan_actions` (backend) must follow the same rules as `services/structure.process_object/process_mark`; tests compare preview against apply.
 
 ## Gotchas

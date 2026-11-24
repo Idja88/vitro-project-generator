@@ -5,7 +5,7 @@
 // перестановка элементов массива. buildSelectionMatrix() превращает состояние в матрицу для
 // бэкенда по тем же правилам, что и прежний getSelectionMatrix() в jQuery-версии.
 
-import type { MatrixMark, MatrixObject, SelectionMatrix } from '../../api/types'
+import type { MarkOrderEntry, MatrixMark, MatrixObject, SelectionMatrix } from '../../api/types'
 
 /** Псевдо-объект: марки создаются прямо в папке проекта, без папки объекта. */
 export const NULL_OBJECT_ID = '00000000-0000-0000-0000-000000000000'
@@ -71,7 +71,10 @@ export function stateFromMatrix(matrix: SelectionMatrix | null): MatrixState {
 
   // Сначала колонки в сохранённом порядке, затем остальные в порядке первого появления
   const ordered = new Map<string, Column>()
-  for (const key of matrix.mark_order ?? []) {
+  for (const entry of matrix.mark_order ?? []) {
+    // сохранённые данные могут содержать что угодно: учитываем только колонки {id, number}
+    if (typeof entry !== 'object' || entry === null || !entry.id) continue
+    const key = columnKey(entry)
     const column = found.get(key)
     if (column) ordered.set(key, column)
   }
@@ -156,7 +159,7 @@ export function buildSelectionMatrix(
     id: project.id,
     name: project.name,
     folder_structure_id: original?.folder_structure_id ?? '',
-    mark_order: state.columns.map(columnKey),
+    mark_order: state.columns.map((c): MarkOrderEntry => ({ id: c.id, number: c.number })),
     objects,
   }
 }
