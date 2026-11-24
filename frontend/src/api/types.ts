@@ -22,12 +22,18 @@ export interface MatrixObject {
   marks: MatrixMark[]
 }
 
+/** Колонка таблицы в mark_order: марка и номер раздела (АР, АР1 и АР2 — три колонки одной марки). */
+export interface MarkOrderEntry {
+  id: string
+  number: string
+}
+
 export interface SelectionMatrix {
   id: string
   name: string
   folder_structure_id: string
-  /** Порядок колонок-марок: ключи вида "<mark_id>|<number>". Необязателен в старых матрицах. */
-  mark_order?: string[]
+  /** Порядок колонок-марок слева направо. Необязателен в старых матрицах. */
+  mark_order?: MarkOrderEntry[]
   objects: MatrixObject[]
 }
 

@@ -92,11 +92,37 @@ describe('stateFromMatrix', () => {
   it('восстанавливает порядок колонок из mark_order, остальные — по первому появлению', () => {
     const state = stateFromMatrix(
       matrix([obj('O1', 'Корпус', [mark('M1', 'АР'), mark('M2', 'КЖ'), mark('M3', 'ГП')])], {
-        mark_order: ['M3|', 'GONE|', 'M1|'],
+        mark_order: [
+          { id: 'M3', number: '' },
+          { id: 'GONE', number: '' },
+          { id: 'M1', number: '' },
+        ],
       }),
     )
 
     expect(state.columns.map((c) => c.name)).toEqual(['ГП', 'АР', 'КЖ'])
+  })
+
+  it('различает в mark_order колонки одной марки с разными номерами', () => {
+    const state = stateFromMatrix(
+      matrix([obj('O1', 'Корпус', [mark('M1', 'АР'), mark('M1', 'АР', { number: '1' }), mark('M1', 'АР', { number: '2' })])], {
+        mark_order: [
+          { id: 'M1', number: '2' },
+          { id: 'M1', number: '' },
+          { id: 'M1', number: '1' },
+        ],
+      }),
+    )
+
+    expect(state.columns.map((c) => `${c.name}${c.number}`)).toEqual(['АР2', 'АР', 'АР1'])
+  })
+
+  it('элементы mark_order, не являющиеся колонкой {id, number}, не учитываются', () => {
+    const saved = matrix([obj('O1', 'Корпус', [mark('M1', 'АР'), mark('M2', 'КЖ')])], {
+      mark_order: ['M2|', { id: 'M2', number: '' }] as unknown as SelectionMatrix['mark_order'],
+    })
+
+    expect(stateFromMatrix(saved).columns.map(columnKey)).toEqual(['M2|', 'M1|'])
   })
 })
 
@@ -106,7 +132,10 @@ describe('buildSelectionMatrix', () => {
     const result = buildSelectionMatrix(state, null, PROJECT)
 
     expect(result.folder_structure_id).toBe('')
-    expect(result.mark_order).toEqual(['M1|', 'M2|2'])
+    expect(result.mark_order).toEqual([
+      { id: 'M1', number: '' },
+      { id: 'M2', number: '2' },
+    ])
     expect(result.objects).toEqual([
       obj('O1', 'Корпус', [mark('M1', 'АР'), mark('M2', 'КЖ', { number: '2' })], { number: '1' }),
     ])
@@ -179,7 +208,10 @@ describe('buildSelectionMatrix', () => {
     const result = buildSelectionMatrix(state, null, PROJECT)
 
     expect(result.objects.map((o) => o.id)).toEqual(['O2', 'O1'])
-    expect(result.mark_order).toEqual(['M2|2', 'M1|'])
+    expect(result.mark_order).toEqual([
+      { id: 'M2', number: '2' },
+      { id: 'M1', number: '' },
+    ])
   })
 })
 

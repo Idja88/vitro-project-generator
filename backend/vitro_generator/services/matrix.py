@@ -1,12 +1,13 @@
 """Общие операции над матрицей выбора (selection_matrix) без обращений к Vitro-CAD.
 
 Формат матрицы:
-    { id, name, folder_structure_id, mark_order?: ["<mark_id>|<number>", ...],
+    { id, name, folder_structure_id, mark_order?: [ { id, number }, ... ],
       objects: [ { id, name, number, folder_structure_id, deleted, to_remove, to_restore,
                    marks: [ { id, name, number, folder_structure_id, deleted, to_remove, to_restore } ] } ] }
 
-`mark_order` необязателен: задаёт порядок колонок-марок. Марки, которых в нём нет, идут после
-перечисленных в порядке первого появления. Старые матрицы без поля читаются как раньше.
+`mark_order` необязателен: порядок колонок-марок слева направо, каждая колонка — пара id марки
+и номер раздела. Марки, которых в нём нет, идут после перечисленных в порядке первого появления.
+Элементы, не являющиеся колонкой {id, number}, при чтении не учитываются.
 """
 
 import json
@@ -60,7 +61,8 @@ def ordered_active_marks(matrix):
             if not mark.get("deleted", False):
                 found.setdefault(mark_key(mark), mark)
 
-    ordered = {key: found[key] for key in matrix.get("mark_order") or [] if key in found}
+    keys = [mark_key(entry) for entry in matrix.get("mark_order") or [] if isinstance(entry, dict) and "id" in entry]
+    ordered = {key: found[key] for key in keys if key in found}
     for key, mark in found.items():
         ordered.setdefault(key, mark)
     return ordered
@@ -102,9 +104,16 @@ def validate_matrix(data):
                 errors.append(f"Некорректный номер раздела марки «{mark.get('name')}»: {mark.get('number')!r}")
 
     mark_order = data.get("mark_order")
-    if mark_order is not None and (
-        not isinstance(mark_order, list) or not all(isinstance(key, str) for key in mark_order)
-    ):
-        errors.append("mark_order должен быть списком строк")
+    if mark_order is not None:
+        if not isinstance(mark_order, list):
+            errors.append("mark_order должен быть списком колонок {id, number}")
+        else:
+            for entry in mark_order:
+                if not isinstance(entry, dict):
+                    errors.append("mark_order должен быть списком колонок {id, number}")
+                    break
+                check_id(entry.get("id"), "марки в mark_order")
+                if not _MARK_NUMBER.match(str(entry.get("number") or "")):
+                    errors.append(f"Некорректный номер раздела в mark_order: {entry.get('number')!r}")
 
     return errors
