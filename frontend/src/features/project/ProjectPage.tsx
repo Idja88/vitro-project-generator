@@ -131,7 +131,12 @@ export function ProjectPage({ projectId }: { projectId: string }) {
     <Stack gap="md">
       <Paper withBorder radius="md" p="md">
         <Stack gap="md">
-          <Title order={3}>{data.name}</Title>
+          <Group justify="space-between" align="flex-start" wrap="wrap">
+            <Title order={3}>{data.name}</Title>
+            <Badge variant="dot" color={data.isGenerated ? 'teal' : 'gray'}>
+              {data.isGenerated ? 'Структура создана' : 'Структура ещё не создана'}
+            </Badge>
+          </Group>
           <Group justify="space-between" align="flex-end" wrap="wrap">
             <Group gap="xs">
               {data.code && <Badge variant="light">Шифр {data.code}</Badge>}
@@ -140,9 +145,6 @@ export function ProjectPage({ projectId }: { projectId: string }) {
                   ГИП: {data.chief}
                 </Badge>
               )}
-              <Badge variant="dot" color={data.isGenerated ? 'teal' : 'gray'}>
-                {data.isGenerated ? 'Структура создана' : 'Структура ещё не создана'}
-              </Badge>
             </Group>
             <Group gap="xs">
               <Button color="teal" leftSection={<IconCheck size={16} />} onClick={startApply} loading={preview.isPending}>
