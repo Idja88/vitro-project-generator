@@ -25,7 +25,16 @@ import { Checkbox, Text, Tooltip, UnstyledButton } from '@mantine/core'
 import { IconGripHorizontal, IconGripVertical } from '@tabler/icons-react'
 import { useState, type CSSProperties, type Dispatch } from 'react'
 
-import { cellKey, columnKey, columnLabel, type Column, type MatrixAction, type MatrixState, type Row } from './model'
+import {
+  cellKey,
+  columnKey,
+  columnLabel,
+  NULL_OBJECT_ID,
+  type Column,
+  type MatrixAction,
+  type MatrixState,
+  type Row,
+} from './model'
 import classes from './MatrixTable.module.css'
 
 const ROW = 'row:'
@@ -144,6 +153,13 @@ function MatrixRow({
           </UnstyledButton>
         </div>
       </th>
+      <td
+        className={cx(classes.numberCell, rowSelected && classes.selected, hover.rowId === row.id && classes.highlight)}
+        onMouseEnter={() => onHover({ rowId: null, colKey: null })}
+      >
+        {/* у «Общего объекта» номера по генплану нет */}
+        {row.id === NULL_OBJECT_ID ? '' : row.number}
+      </td>
       {state.columns.map((column) => {
         const key = columnKey(column)
         const checked = state.checked.has(cellKey(row.id, key))
@@ -213,6 +229,11 @@ export function MatrixTable({ state, dispatch }: { state: MatrixState; dispatch:
                     Наименование объекта
                   </Text>
                 </Tooltip>
+              </th>
+              <th className={classes.numberHeader} onMouseEnter={() => setHover({ rowId: null, colKey: null })}>
+                <Text size="sm" fw={600}>
+                  Номер по генплану
+                </Text>
               </th>
               <SortableContext items={state.columns.map((c) => COL + columnKey(c))} strategy={horizontalListSortingStrategy}>
                 {state.columns.map((column) => {
