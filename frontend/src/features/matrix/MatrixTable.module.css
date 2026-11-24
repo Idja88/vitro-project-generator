@@ -42,7 +42,7 @@
   width: var(--name-width);
   min-width: var(--name-width);
   max-width: var(--name-width);
-  text-align: left;
+  text-align: center; /* заголовок по центру; сами наименования — по левому краю (.rowHeader) */
 }
 
 .numberHeader {
