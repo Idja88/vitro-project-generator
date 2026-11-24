@@ -25,7 +25,16 @@ import { Checkbox, Text, Tooltip, UnstyledButton } from '@mantine/core'
 import { IconGripHorizontal, IconGripVertical } from '@tabler/icons-react'
 import { useState, type CSSProperties, type Dispatch } from 'react'
 
-import { cellKey, columnKey, columnLabel, type Column, type MatrixAction, type MatrixState, type Row } from './model'
+import {
+  cellKey,
+  columnKey,
+  columnLabel,
+  NULL_OBJECT_ID,
+  type Column,
+  type MatrixAction,
+  type MatrixState,
+  type Row,
+} from './model'
 import classes from './MatrixTable.module.css'
 
 const ROW = 'row:'
@@ -81,7 +90,7 @@ function ColumnHeader({
           type="button"
           ref={setActivatorNodeRef}
           className={classes.handle}
-          aria-label={`Переместить марку ${columnLabel(column)}`}
+          aria-label={`Переместить раздел ${columnLabel(column)}`}
           {...attributes}
           {...listeners}
         >
@@ -144,6 +153,13 @@ function MatrixRow({
           </UnstyledButton>
         </div>
       </th>
+      <td
+        className={cx(classes.numberCell, rowSelected && classes.selected, hover.rowId === row.id && classes.highlight)}
+        onMouseEnter={() => onHover({ rowId: null, colKey: null })}
+      >
+        {/* у «Общего объекта» номера по генплану нет */}
+        {row.id === NULL_OBJECT_ID ? '' : row.number}
+      </td>
       {state.columns.map((column) => {
         const key = columnKey(column)
         const checked = state.checked.has(cellKey(row.id, key))
@@ -195,7 +211,7 @@ export function MatrixTable({ state, dispatch }: { state: MatrixState; dispatch:
       <div className={classes.empty}>
         <Text fw={500}>Матрица пуста</Text>
         <Text c="dimmed" size="sm">
-          Добавьте объекты проектирования и марки комплектов, затем отметьте пересечения.
+          Добавьте объекты проектирования и разделы, затем отметьте пересечения.
         </Text>
       </div>
     )
@@ -210,9 +226,14 @@ export function MatrixTable({ state, dispatch }: { state: MatrixState; dispatch:
               <th className={classes.corner} onMouseEnter={() => setHover({ rowId: null, colKey: null })}>
                 <Tooltip label="Клик по названию выделяет строку или столбец, ручка — перетаскивание" withArrow>
                   <Text size="sm" fw={600}>
-                    Объект проектирования
+                    Наименование объекта
                   </Text>
                 </Tooltip>
+              </th>
+              <th className={classes.numberHeader} onMouseEnter={() => setHover({ rowId: null, colKey: null })}>
+                <Text size="sm" fw={600}>
+                  Номер по генплану
+                </Text>
               </th>
               <SortableContext items={state.columns.map((c) => COL + columnKey(c))} strategy={horizontalListSortingStrategy}>
                 {state.columns.map((column) => {

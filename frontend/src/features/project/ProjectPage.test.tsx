@@ -45,7 +45,7 @@ describe('ProjectPage', () => {
     renderWithProviders(<ProjectPage projectId="P1" />)
 
     expect(await screen.findByText('Проект')).toBeInTheDocument()
-    expect(screen.getByText('Шифр 0079')).toBeInTheDocument()
+    expect(screen.getByText('КОД: 0079')).toBeInTheDocument()
     expect(screen.getByText('ГИП: Иванов И.И.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Обновить структуру' })).toBeInTheDocument()
     expect(screen.getByRole('checkbox', { name: 'Корпус — АР' })).toBeChecked()
@@ -57,7 +57,7 @@ describe('ProjectPage', () => {
     renderWithProviders(<ProjectPage projectId="P1" />)
 
     expect(await screen.findByText('Матрица пуста')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Форма 10/ })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Выгрузить форму 10' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Создать структуру' })).toBeInTheDocument()
   })
 
@@ -79,10 +79,11 @@ describe('ProjectPage', () => {
 
     const dialog = await screen.findByRole('dialog', { name: 'Проверьте изменения' })
     expect(within(dialog).getByText('Будет удалено в корзину')).toBeInTheDocument()
-    expect(within(dialog).getByText('Марка КЖ2 — Корпус')).toBeInTheDocument()
+    expect(within(dialog).getByText('Раздел КЖ2 — Корпус')).toBeInTheDocument()
 
     await user.click(within(dialog).getByRole('button', { name: 'Обновить структуру' }))
     expect(await screen.findByRole('link', { name: 'Открыть в Vitro-CAD' })).toHaveAttribute('href', 'http://vitro/item/PF')
+    expect(screen.queryByText('http://vitro/item/PF')).not.toBeInTheDocument()
 
     const sent = calls.find((c) => c.method === 'POST' && c.path === 'projects/P1/structure')?.body as SelectionMatrix
     const kzh = sent.objects[0].marks.find((m) => m.id === 'M2')

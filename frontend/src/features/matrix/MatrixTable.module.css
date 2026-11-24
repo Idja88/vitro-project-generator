@@ -1,6 +1,6 @@
 .scroll {
   overflow: auto;
-  max-height: calc(100vh - 220px);
+  max-height: calc(100vh - 168px); /* карточка проекта и панель кнопок над таблицей */
   border: 1px solid var(--mantine-color-default-border);
   border-radius: var(--mantine-radius-md);
   background: var(--mantine-color-body);
@@ -29,11 +29,41 @@
   background: var(--mantine-color-gray-0);
 }
 
+/* Закреплённые слева столбцы: «Наименование объекта» (ширина --name-width) и «Номер по генплану».
+   Ширина первого фиксирована, иначе второму не от чего отсчитывать left. */
+.table {
+  --name-width: 260px;
+  --number-width: 110px;
+}
+
 .corner {
   left: 0;
   z-index: 3 !important;
-  min-width: 260px;
-  text-align: left;
+  width: var(--name-width);
+  min-width: var(--name-width);
+  max-width: var(--name-width);
+  text-align: center; /* заголовок по центру; сами наименования — по левому краю (.rowHeader) */
+}
+
+.numberHeader {
+  left: var(--name-width);
+  z-index: 3 !important;
+  width: var(--number-width);
+  min-width: var(--number-width);
+  white-space: normal !important;
+  text-align: center;
+}
+
+.numberCell {
+  position: sticky;
+  left: var(--name-width);
+  z-index: 1;
+  width: var(--number-width);
+  min-width: var(--number-width);
+  background: var(--mantine-color-body);
+  text-align: center;
+  /* граница закреплённой области */
+  box-shadow: inset -1px 0 0 var(--mantine-color-default-border);
 }
 
 .rowHeader {
@@ -43,7 +73,11 @@
   background: var(--mantine-color-body);
   text-align: left;
   font-weight: 500;
-  min-width: 260px;
+  width: var(--name-width);
+  min-width: var(--name-width);
+  max-width: var(--name-width);
+  /* длинное наименование переносится, а не наезжает на номер */
+  white-space: normal !important;
 }
 
 .colHeader {

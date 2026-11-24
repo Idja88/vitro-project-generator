@@ -1,4 +1,18 @@
-import { Alert, Anchor, Badge, Button, Center, Group, Loader, Modal, Paper, Stack, Text, Title } from '@mantine/core'
+import {
+  ActionIcon,
+  Alert,
+  Badge,
+  Button,
+  Center,
+  Group,
+  Loader,
+  Modal,
+  Paper,
+  Stack,
+  Text,
+  Title,
+  Tooltip,
+} from '@mantine/core'
 import { modals } from '@mantine/modals'
 import { notifications } from '@mantine/notifications'
 import { IconCheck, IconFileSpreadsheet, IconPlus, IconTrash } from '@tabler/icons-react'
@@ -62,7 +76,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
       notifications.show({
         color: 'yellow',
         title: 'Нечего сохранять',
-        message: 'Отметьте хотя бы одну марку у объекта.',
+        message: 'Отметьте хотя бы один раздел у объекта.',
       })
       return
     }
@@ -116,46 +130,54 @@ export function ProjectPage({ projectId }: { projectId: string }) {
   return (
     <Stack gap="md">
       <Paper withBorder radius="md" p="md">
-        <Group justify="space-between" align="flex-start" wrap="wrap">
-          <Stack gap={6}>
+        <Stack gap="md">
+          <Group justify="space-between" align="flex-start" wrap="wrap">
             <Title order={3}>{data.name}</Title>
+            <Badge variant="dot" size="sm" color={data.isGenerated ? 'teal' : 'gray'}>
+              {data.isGenerated ? 'Структура создана' : 'Структура ещё не создана'}
+            </Badge>
+          </Group>
+          <Group justify="space-between" align="flex-end" wrap="wrap">
             <Group gap="xs">
-              {data.code && <Badge variant="light">Шифр {data.code}</Badge>}
+              {data.code && (
+                <Badge variant="light" color="gray" fw={800}>
+                  КОД: {data.code}
+                </Badge>
+              )}
               {data.chief && (
-                <Badge variant="light" color="gray">
+                <Badge variant="light" color="gray" fw={800}>
                   ГИП: {data.chief}
                 </Badge>
               )}
-              <Badge variant="dot" color={data.isGenerated ? 'teal' : 'gray'}>
-                {data.isGenerated ? 'Структура создана' : 'Структура ещё не создана'}
-              </Badge>
             </Group>
-          </Stack>
-          <Group gap="xs">
-            <Button
-              variant="default"
-              leftSection={<IconFileSpreadsheet size={16} />}
-              onClick={exportF10}
-              loading={exporting}
-              disabled={!data.matrix}
-              title={data.matrix ? undefined : 'Сначала создайте структуру'}
-            >
-              Форма 10
-            </Button>
-            <Button color="teal" leftSection={<IconCheck size={16} />} onClick={startApply} loading={preview.isPending}>
-              {data.isGenerated ? 'Обновить структуру' : 'Создать структуру'}
-            </Button>
+            <Group gap="xs">
+              <Button color="teal" leftSection={<IconCheck size={16} />} onClick={startApply} loading={preview.isPending}>
+                {data.isGenerated ? 'Обновить структуру' : 'Создать структуру'}
+              </Button>
+              <Tooltip label={data.matrix ? 'Выгрузить форму 10' : 'Сначала создайте структуру'} withArrow>
+                <ActionIcon
+                  variant="light"
+                  size="input-sm"
+                  onClick={exportF10}
+                  loading={exporting}
+                  disabled={!data.matrix}
+                  aria-label="Выгрузить форму 10"
+                >
+                  <IconFileSpreadsheet size={18} />
+                </ActionIcon>
+              </Tooltip>
+            </Group>
           </Group>
-        </Group>
+        </Stack>
       </Paper>
 
       <Group justify="space-between">
         <Group gap="xs">
           <Button variant="light" leftSection={<IconPlus size={16} />} onClick={() => setModal('objects')}>
-            Объекты
+            Объект
           </Button>
           <Button variant="light" leftSection={<IconPlus size={16} />} onClick={() => setModal('mark')}>
-            Марка
+            Раздел
           </Button>
           <Button
             variant="light"
@@ -173,7 +195,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
           )}
         </Group>
         <Text size="sm" c="dimmed">
-          Объектов: {state.rows.length} · Марок: {state.columns.length}
+          Объектов: {state.rows.length} · Разделов: {state.columns.length}
         </Text>
       </Group>
 
@@ -224,11 +246,6 @@ export function ProjectPage({ projectId }: { projectId: string }) {
               </Button>
             )}
           </Group>
-          {result?.project_link && (
-            <Anchor href={result.project_link} target="_blank" size="xs" c="dimmed">
-              {result.project_link}
-            </Anchor>
-          )}
         </Stack>
       </Modal>
     </Stack>
