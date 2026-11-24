@@ -154,14 +154,14 @@ export function ProjectPage({ projectId }: { projectId: string }) {
               <Button color="teal" leftSection={<IconCheck size={16} />} onClick={startApply} loading={preview.isPending}>
                 {data.isGenerated ? 'Обновить структуру' : 'Создать структуру'}
               </Button>
-              <Tooltip label={data.matrix ? 'Сформировать Форму 10' : 'Сначала создайте структуру'} withArrow>
+              <Tooltip label={data.matrix ? 'Выгрузить форму 10' : 'Сначала создайте структуру'} withArrow>
                 <ActionIcon
                   variant="light"
                   size="input-sm"
                   onClick={exportF10}
                   loading={exporting}
                   disabled={!data.matrix}
-                  aria-label="Сформировать Форму 10"
+                  aria-label="Выгрузить форму 10"
                 >
                   <IconFileSpreadsheet size={18} />
                 </ActionIcon>

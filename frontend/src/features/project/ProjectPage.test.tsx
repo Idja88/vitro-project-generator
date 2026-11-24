@@ -57,7 +57,7 @@ describe('ProjectPage', () => {
     renderWithProviders(<ProjectPage projectId="P1" />)
 
     expect(await screen.findByText('Матрица пуста')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Сформировать Форму 10' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Выгрузить форму 10' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Создать структуру' })).toBeInTheDocument()
   })
 
