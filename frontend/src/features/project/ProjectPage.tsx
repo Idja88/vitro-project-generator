@@ -139,9 +139,14 @@ export function ProjectPage({ projectId }: { projectId: string }) {
           </Group>
           <Group justify="space-between" align="flex-end" wrap="wrap">
             <Group gap="xs">
-              {data.code && <Badge variant="light">Шифр {data.code}</Badge>}
+              {/* Свой цвет (grape): не путаются с кнопками (teal, indigo) и удалением (red) */}
+              {data.code && (
+                <Badge variant="light" color="grape" fw={800}>
+                  КОД: {data.code}
+                </Badge>
+              )}
               {data.chief && (
-                <Badge variant="light" color="gray">
+                <Badge variant="light" color="grape" fw={800}>
                   ГИП: {data.chief}
                 </Badge>
               )}

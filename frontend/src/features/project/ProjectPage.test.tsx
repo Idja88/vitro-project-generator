@@ -45,7 +45,7 @@ describe('ProjectPage', () => {
     renderWithProviders(<ProjectPage projectId="P1" />)
 
     expect(await screen.findByText('Проект')).toBeInTheDocument()
-    expect(screen.getByText('Шифр 0079')).toBeInTheDocument()
+    expect(screen.getByText('КОД: 0079')).toBeInTheDocument()
     expect(screen.getByText('ГИП: Иванов И.И.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Обновить структуру' })).toBeInTheDocument()
     expect(screen.getByRole('checkbox', { name: 'Корпус — АР' })).toBeChecked()

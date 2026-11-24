@@ -210,7 +210,7 @@ export function MatrixTable({ state, dispatch }: { state: MatrixState; dispatch:
               <th className={classes.corner} onMouseEnter={() => setHover({ rowId: null, colKey: null })}>
                 <Tooltip label="Клик по названию выделяет строку или столбец, ручка — перетаскивание" withArrow>
                   <Text size="sm" fw={600}>
-                    Объект проектирования
+                    Наименование объекта
                   </Text>
                 </Tooltip>
               </th>

@@ -46,7 +46,7 @@ export function AddObjectsModal({ opened, onClose, parentId, listUrl, state, onA
   }
 
   return (
-    <Modal opened={opened} onClose={close} title="Добавить объекты проектирования" size="lg">
+    <Modal opened={opened} onClose={close} title="Добавить объекты" size="lg">
       <Stack>
         {!parentId && (
           <Alert color="red" title="У проекта не указана площадка">
