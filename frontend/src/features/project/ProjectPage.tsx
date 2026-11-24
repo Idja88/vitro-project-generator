@@ -139,14 +139,13 @@ export function ProjectPage({ projectId }: { projectId: string }) {
           </Group>
           <Group justify="space-between" align="flex-end" wrap="wrap">
             <Group gap="xs">
-              {/* Свой цвет (grape): не путаются с кнопками (teal, indigo) и удалением (red) */}
               {data.code && (
-                <Badge variant="light" color="grape" fw={800}>
+                <Badge variant="light" color="gray" fw={800}>
                   КОД: {data.code}
                 </Badge>
               )}
               {data.chief && (
-                <Badge variant="light" color="grape" fw={800}>
+                <Badge variant="light" color="gray" fw={800}>
                   ГИП: {data.chief}
                 </Badge>
               )}
@@ -155,14 +154,14 @@ export function ProjectPage({ projectId }: { projectId: string }) {
               <Button color="teal" leftSection={<IconCheck size={16} />} onClick={startApply} loading={preview.isPending}>
                 {data.isGenerated ? 'Обновить структуру' : 'Создать структуру'}
               </Button>
-              <Tooltip label={data.matrix ? 'Выгрузить Форму 10 в Excel' : 'Сначала создайте структуру'} withArrow>
+              <Tooltip label={data.matrix ? 'Сформировать Форму 10' : 'Сначала создайте структуру'} withArrow>
                 <ActionIcon
-                  variant="default"
+                  variant="light"
                   size="input-sm"
                   onClick={exportF10}
                   loading={exporting}
                   disabled={!data.matrix}
-                  aria-label="Выгрузить Форму 10 в Excel"
+                  aria-label="Сформировать Форму 10"
                 >
                   <IconFileSpreadsheet size={18} />
                 </ActionIcon>
